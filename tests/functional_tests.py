@@ -10,10 +10,9 @@ download_ena_samples = genotypePublicData.Download_ENA_samplesheet(tax, library_
 
 # Dr. Gene Tica wants to get genotypes for all the latest RNAseq samples available on ENA (http://www.ebi.ac.uk/ena/)
 # To do this Gene needs to be able to download the FastQ files for all samples currently available
-download_ena_samples.download_samplesheet('ENA')
+download_ena_samples.download_samplesheet('/tmp')
 
 # The information Gene gets includes the link to the fastq file to download and the md5sum for checking validity of Fastq file
 # along with several other fields
-ass
 
 # Using the link to the fastq file the files are automatically downloaded to the provided outfolder
