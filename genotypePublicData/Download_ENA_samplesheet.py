@@ -1,6 +1,8 @@
 import logging
 import sys
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
+logging.basicConfig(stream=sys.stdout, level=logging.INFO,
+                    format=format)
 from selenium import webdriver
 import time
 import os
@@ -15,7 +17,8 @@ class Download_ENA_samplesheet:
         '''
         self.tax_id = tax_id
         self.library_strategy = library_strategy
-    
+        self.samplesheet_file = None
+        
     def __page_loaded(self, *arg, sleep = 1):
         '''Check if the javascript page has loaded by giving a text to search that is only in the html source when finished loading
            It uses the current page the driver is on
@@ -117,8 +120,6 @@ class Download_ENA_samplesheet:
             element = self.driver.find_element_by_xpath('//div[@class="html-face" and contains(text(), "Select columns")]')
             element.click()
             html_source = self.__page_loaded('>TEXT<', '>Hide Select columns<')
-            with open('/tmp/tmp.txt','wb') as out:
-                out.write(soup.prettify().encode('utf-8'))
             self.__select_all_checkboxes()
             
             element = self.driver.find_element_by_xpath('//*[@title="Download files and save to disk" and contains(text(), "TEXT")]')
@@ -128,6 +129,7 @@ class Download_ENA_samplesheet:
                 current_datetime = time.strftime("d%dm%my%Y_h%Hm%Ms%S")
                 logging.info('Renaming '+output_directory+'/ena.txt to '+output_directory+'/ena_'+current_datetime+'.txt')
                 shutil.move(output_directory+'/ena.txt', output_directory+'/ena_'+current_datetime+'.txt')
+                self.samplesheet_file = output_directory+'/ena_'+current_datetime+'.txt'
             else:
                 raise RuntimeError('__fully_downloaded() did not return True')
             self.quit_browser()
@@ -140,6 +142,12 @@ class Download_ENA_samplesheet:
 
     def set_library_strategy(self,library_strategy):
         self.library_strategy = library_strategy
+    
+    def get_samplesheet_file(self):
+        if self.samplesheet_file:
+            return self.samplesheet_file
+        else:
+            raise RuntimeError('Need to run download_samplesheet first')
         
     def quit_browser(self):
         self.driver.quit()
