@@ -1,5 +1,4 @@
 from context import genotypePublicData
-import requests
 
 # Get the Homo Sapien samples (tax 9606). Change for samples of different organism
 tax = '9606'

@@ -16,16 +16,24 @@ class Download_ENA_samplesheet:
         self.tax_id = tax_id
         self.library_strategy = library_strategy
     
-    def __page_loaded(self, text, sleep = 1):
+    def __page_loaded(self, *arg, sleep = 1):
         '''Check if the javascript page has loaded by giving a text to search that is only in the html source when finished loading
            It uses the current page the driver is on
         
-           text(str)    Text source needs to contain before continuing
+           arg*(string) Variable number of text html_source needs to contain before continuing
            sleep(int)   Seconds to wait before trying source again (def: 1)
         '''
+        if len(arg) == 0:
+            RuntimeError('Need at least one argument')
         html_source = self.driver.page_source
         x = 0
-        while not text in html_source:
+        def __check_if_text_in_html_source(arg, html_source):
+            all_text_in_source = True
+            for text in arg:
+                if text not in html_source:
+                    all_text_in_source = False
+            return all_text_in_source
+        while not __check_if_text_in_html_source(arg, html_source):
             html_source = self.driver.page_source
             time.sleep(sleep)
             x+=1
@@ -65,8 +73,7 @@ class Download_ENA_samplesheet:
             if new_size < old_size:
                 raise RuntimeError('New size of downloaded file should never be larger than old size')
         return True
-        
-    
+         
     def __prevent_download_dialog(self, output_directory):
         '''Set Firefox profile such that it automatically downloads txt files to output_directory
         
@@ -79,6 +86,13 @@ class Download_ENA_samplesheet:
         profile.set_preference("browser.download.dir", output_directory)
         return profile
            
+    def __select_all_checkboxes(self):
+        '''Select all checkboxes on a page'''
+        checkboxes = self.driver.find_elements_by_css_selector('.gwt-CheckBox > input')
+        for checkbox in checkboxes:
+            if not checkbox.is_selected():
+                checkbox.click()
+    
     def download_samplesheet(self, output_directory, tax_id='9606',library_strategy='RNA-Seq'):
         '''Download samplesheet from ENA
         output_file(str)    output file name for samplesheet    
@@ -98,8 +112,15 @@ class Download_ENA_samplesheet:
             element.click()
             html_source = self.__page_loaded('>Reports</div>')
             element = self.driver.find_element_by_xpath('//div[@class="gwt-TabLayoutPanelTab GHVLHNUCH"]')
+            element.click() 
+            html_source = self.__page_loaded('>TEXT<', '>Select columns<')
+            element = self.driver.find_element_by_xpath('//div[@class="html-face" and contains(text(), "Select columns")]')
             element.click()
-            html_source = self.__page_loaded('>TEXT<')
+            html_source = self.__page_loaded('>TEXT<', '>Hide Select columns<')
+            with open('/tmp/tmp.txt','wb') as out:
+                out.write(soup.prettify().encode('utf-8'))
+            self.__select_all_checkboxes()
+            
             element = self.driver.find_element_by_xpath('//*[@title="Download files and save to disk" and contains(text(), "TEXT")]')
             logging.info('Downloading to '+output_directory+'/ena.txt')
             element.click()
