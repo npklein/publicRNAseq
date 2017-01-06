@@ -4,49 +4,54 @@ import time
 import requests
 import os
 import urllib.request 
-from subprocess import Popen, PIPE, STDOUT
+import subprocess
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=format)
 class Download_ENA_samples:
-    def __init__(self, samplesheet, aspera_binary='ascp', aspera_openssh='asperaweb_id_dsa.openssh'):
+    def __init__(self, samplesheet, download_location, aspera_binary='ascp', aspera_openssh='asperaweb_id_dsa.openssh'):
         '''Initiate download_ENA_samplesheet class by setting tax_id and library_strategy
         
-        aspera_binary(str)  Location of the Aspera binary (default: use from PATH) 
-        aspera_openssh(str)  Location of the Aspera openssh (default: use from PATH) 
         samplesheet(str)    Samplesheet downloaded from http://www.ebi.ac.uk/ena/data/warehouse/search
                             Reports tab, with all columns selected.
                             Can also be downloaded by running Download_ENA_samplesheet (see genotypePublicData README)
+        download_location(str):   Location to store the downloaded fastq files at
+        aspera_binary(str)  Location of the Aspera binary (default: use from PATH) 
+        aspera_openssh(str)  Location of the Aspera openssh (default: use from PATH) 
         '''
-        self.aspera_binary = aspera_binary
-        self.aspera_openssh = aspera_openssh
+        # os.path.expanduser changes ~ into homedir
+        self.aspera_binary = os.path.expanduser(aspera_binary)
+        self.aspera_openssh = os.path.expanduser(aspera_openssh)
+        if not os.path.isdir(download_location):
+            logging.error('Download destination directory '+download_location+' does not exist')
+            raise RuntimeError('Download destination directory does not exist')
+        self.download_location = download_location
         self.samplesheet = samplesheet
         self.include_list = []
         self.exclude_list = []
         
-    def __check_if_aspera_exists(self, aspera_binary, aspera_openssh):
+    def __check_if_aspera_exists(self, aspera_binary):
         '''Check if aspera location given in aspera_binary exists or is in PATH
         
            aspera_binary(str):   Location of the Aspera binary
            aspera_openssh(str)  Location of the Aspera openssh
         '''
-        for program in [aspera_binary, aspera_openssh]:
-            def is_exe(fpath):
-                return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    
-            fpath, fname = os.path.split(program)
-            if fpath:
-                if is_exe(program):
-                    return program
-            else:
-                for path in os.environ["PATH"].split(os.pathsep):
-                    path = path.strip('"')
-                    exe_file = os.path.join(path, program)
-                    if is_exe(exe_file):
-                        return exe_file
-            logging.error(program+' does not exist and is not found in PATH. Set correct location for binary and openssh key '+
-                          'when initiating Download_ENA_samples class or with set function')        
-            raise RuntimeError('Aspera binary not found')
+        def is_exe(fpath):
+            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+        fpath, fname = os.path.split(aspera_binary)
+        if fpath:
+            if is_exe(aspera_binary):
+                return aspera_binary
+        else:
+            for path in os.environ["PATH"].split(os.pathsep):
+                path = path.strip('"')
+                exe_file = os.path.join(path, aspera_binary)
+                if is_exe(exe_file):
+                    return exe_file
+        logging.error(aspera_binary+' does not exist and is not found in PATH. Set correct location for binary and openssh key '+
+                      'when initiating Download_ENA_samples class or with set function')        
+        raise RuntimeError('Aspera binary not found')
     
     def set_aspera_binary(self, aspera_binary):
         '''Set path to aspera binary'''
@@ -99,26 +104,29 @@ class Download_ENA_samples:
            fastq_aspera_link(str)   Aspera link to download
            download_location(str)   Location to save downloaded file at
         '''
-        command = self.aspera_binary + ' -QT -l 2000m -i ' + self.aspera_openssh + ' ' + fastq_aspera_link + ' ' + download_location
-        p = Popen(command, stdout = PIPE, stderr = STDOUT, shell = True)
+        command = [self.aspera_binary,'-QT', '-l 2000m', '-i', self.aspera_openssh,fastq_aspera_link,download_location]
+        logging.info('Downloading with the terminal command:\n'+' '.join(command))
+        subprocess.call(command)
         
-        # read output from process as it is being outputted by aspera
-        while True:
-            line = p.stdout.readline()
-            if not line: break
-            
+
     def download_samples(self, download_protocol='aspera'):
         '''Download the samples using either aspera or ftp
         
            download_protocol(str):   Download protocol to use (def: aspera). Can only be aspera or ftp
         '''
         if download_protocol == 'aspera':
-            self.__check_if_aspera_exists(self.aspera_binary, self.aspera_openssh)
+            self.__check_if_aspera_exists(self.aspera_binary)
+            print(self.aspera_openssh)
+            print(os.path.isfile(self.aspera_openssh))
+            if not os.path.isfile(self.aspera_openssh):
+                logging.error('openssh key for Aspera not found at '+self.aspera_openssh)
+                raise RuntimeError('openssh key for Aspera not found at '+self.aspera_openssh)
             logging.info('Found aspera binary at '+self.aspera_binary)
         elif download_protocol != 'ftp':
             logging.error('download_protocol variable given to download_samples was '+download_protocol+', not aspera or ftp')
             raise RuntimeError('download protocol can only be aspera or ftp')
         included_samples = []
+        print('Downloading samples to '+self.download_location)
         with open(self.samplesheet,'r', encoding='utf-8') as samplesheet_handle:
             samplesheet_header = samplesheet_handle.readline().split('\t')
             header_index = self.__get_all_indices(samplesheet_header)
@@ -135,11 +143,11 @@ class Download_ENA_samples:
                             if download_protocol == 'ftp':
                                 fastq_ftp_link = 'ftp://'+line[header_index['fastq_ftp']]
                                 logging.info('Downloading '+fastq_ftp_link+' using ftp...')
-                                urllib.request.urlretrieve(fastq_ftp_link, '/tmp/'+fastq_ftp_link.split('/')[-1], self.__reporthook)
+                                urllib.request.urlretrieve(fastq_ftp_link, self.download_location+fastq_ftp_link.split('/')[-1], self.__reporthook)
                             elif download_protocol == 'aspera':
-                                fastq_aspera_link = 'ftp://'+line[header_index['fastq_ftp']]
+                                fastq_aspera_link = 'era-fasp@'+line[header_index['fastq_aspera']]
                                 logging.info('Downloading '+fastq_aspera_link+' using aspera...')
-                                self.__download_sample_with_aspera(fastq_aspera_link)
+                                self.__download_sample_with_aspera(fastq_aspera_link, self.download_location+fastq_aspera_link.split('/')[-1])
                             else:
                                 raise RuntimeError('download protocol was not ftp or aspera')
         
