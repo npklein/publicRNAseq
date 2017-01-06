@@ -3,6 +3,7 @@ import sys
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=format)
+from pyvirtualdisplay import Display
 from selenium import webdriver
 import time
 import os
@@ -114,12 +115,15 @@ class Download_ENA_samplesheet:
         '''
         # To prevent download dialog
 
+        display = Display(visible=0, size=(1024, 768))
+        display.start()
+        
         self.driver = webdriver.Firefox(self.__prevent_download_dialog(output_directory))
         logging.info('Downloading samplesheet for tax_id: '+self.tax_id+' and library strategy: '+self.library_strategy)
         url = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%289606%29%20AND%20library_strategy=%22RNA-Seq%22%22&domain=read'
         logging.info('Using url: '+url)
         try:
-            self.driver.get(url)
+            self.driver.get(url)            
             # can take a bit of time for the javascript to load, wait until it's fully loaded
             html_source = self.__page_loaded('Run')
             # there are 2 domainTextMouseOut, one for Run and one for Experiment. We need the Run one
@@ -145,9 +149,11 @@ class Download_ENA_samplesheet:
                 logging.error('Downloading samplesheet did not succeed. Clean up download folder and try again.')
                 raise RuntimeError('__fully_downloaded() did not return True')
             self.quit_browser()
+            display.stop()
         except:
             self.quit_browser()
             logging.error('Downloading samplesheet did not succeed. Clean up download folder and try again.')
+            display.stop()
             raise
         
     def set_tax_id(self,taxid):
