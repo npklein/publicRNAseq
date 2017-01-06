@@ -13,5 +13,8 @@ include_list = ['DRR000897','DRR001173','DRR001174']
 exclude_list = ['DRR001174']
 download_ena_samples.set_include_list(include_list)
 download_ena_samples.set_exclude_list(exclude_list)
-# Using the link to the fastq file the files are automatically downloaded to the provided outfolder
+# Using the link to the fastq file the files are automatically downloaded to the provided outfolder using ftp
+download_ena_samples.download_samples(download_protocol='ftp')
+
+# or faster, using aspera
 download_ena_samples.download_samples()
