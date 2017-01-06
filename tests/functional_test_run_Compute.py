@@ -7,11 +7,11 @@ import os
 ena_samplesheet = 'test_data/ena_example_samplesheet.txt'
 jobs_folder = '/tmp/jobs/'
 molgenis_compute_location = 'molgenis_compute.sh'
-run_molgenis = genotypePublicData.Run_Molgenis(molgenis_compute_location,ena_samplesheet,jobs_folder)
+run_compute = genotypePublicData.Run_Compute(molgenis_compute_location,ena_samplesheet,jobs_folder,batch=2)
 
 include_list = ['DRR000897','DRR001173','DRR001174']
 exclude_list = ['DRR001174']
-download_ena_samples.set_include_list(include_list)
-download_ena_samples.set_exclude_list(exclude_list)
+run_compute.set_include_list(include_list)
+run_compute.set_exclude_list(exclude_list)
 # Using the link to the fastq file the files are automatically downloaded to the provided outfolder using aspera
-run_molgenis.make_jobs()
+run_compute.make_jobs()
