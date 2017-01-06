@@ -16,7 +16,7 @@ class Download_ENA_samples:
                             Reports tab, with all columns selected.
                             Can also be downloaded by running Download_ENA_samplesheet (see genotypePublicData README)
         '''
-        self.aspera = self.__check_if_aspera_exists(aspera_binary)
+        self.aspera = aspera_binary
         self.samplesheet = samplesheet
         self.include_list = []
         self.exclude_list = []
@@ -74,11 +74,22 @@ class Download_ENA_samples:
             logging.info(s)
             if readsofar >= totalsize: # near the end
                 logging.info("\n")
+            time.sleep(5)
         else: # total size is unknown
             logging.info("read %d\n" % (readsofar,))
-    
+            time.sleep(5)
         
-    def download_samples(self):
+    def download_samples(self, download_protocol='aspera'):
+        '''Download the samples using either aspera or ftp
+        
+           download_protocol(str):   Download protocol to use (def: aspera). Can only be aspera or ftp
+        '''
+        if download_protocol == 'aspera':
+            self.__check_if_aspera_exists(aspera_binary)
+            logging.info('Found aspera binary at '+aspera_binary)
+        elif download_protocol != 'ftp':
+            logging.error('download_protocol variable given to download_samples was '+download_protocol+', not aspera or ftp')
+            raise RuntimeError('download protocol can only be aspera or ftp')
         included_samples = []
         with open(self.samplesheet,'r', encoding='utf-8') as samplesheet_handle:
             samplesheet_header = samplesheet_handle.readline().split('\t')
@@ -95,7 +106,12 @@ class Download_ENA_samples:
                         if run_accession not in self.exclude_list:
                             fastq_file = 'ftp://'+line[header_index['fastq_ftp']]
                             logging.info('Downloading '+fastq_file+'...')
-                            urllib.request.urlretrieve(fastq_file, '/tmp/'+fastq_file.split('/')[-1], self.__reporthook)
+                            if download_protocol == 'ftp':
+                                urllib.request.urlretrieve(fastq_file, '/tmp/'+fastq_file.split('/')[-1], self.__reporthook)
+                            elif download_protocol == 'aspera':
+                                pass
+                            else:
+                                raise RuntimeError('download protocol was not ftp or aspera')
         not_included_samples = [x for x in self.include_list if x not in included_samples]
         if len(not_included_samples):
             logging.warn('Not all samples from include list were present in the samplesheet. Missing: '+'\t'.join(not_included_samples))
