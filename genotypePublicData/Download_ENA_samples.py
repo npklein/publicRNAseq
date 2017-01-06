@@ -112,7 +112,7 @@ class Download_ENA_samples:
            download_protocol(str):   Download protocol to use (def: aspera). Can only be aspera or ftp
         '''
         if download_protocol == 'aspera':
-            self.__check_if_aspera_exists(self.aspera_binary)
+            self.__check_if_aspera_exists(self.aspera_binary, self.aspera_openssh)
             logging.info('Found aspera binary at '+self.aspera_binary)
         elif download_protocol != 'ftp':
             logging.error('download_protocol variable given to download_samples was '+download_protocol+', not aspera or ftp')
@@ -134,7 +134,7 @@ class Download_ENA_samples:
                             if download_protocol == 'ftp':
                                 fastq_ftp_link = 'ftp://'+line[header_index['fastq_ftp']]
                                 logging.info('Downloading '+fastq_ftp_link+' using ftp...')
-                                urllib.request.urlretrieve(fastq_file, '/tmp/'+fastq_ftp_link.split('/')[-1], self.__reporthook)
+                                urllib.request.urlretrieve(fastq_ftp_link, '/tmp/'+fastq_ftp_link.split('/')[-1], self.__reporthook)
                             elif download_protocol == 'aspera':
                                 fastq_aspera_link = 'ftp://'+line[header_index['fastq_ftp']]
                                 logging.info('Downloading '+fastq_aspera_link+' using aspera...')
