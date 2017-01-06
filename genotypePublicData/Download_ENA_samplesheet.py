@@ -45,21 +45,32 @@ class Download_ENA_samplesheet:
                 raise RuntimeError('Waited for page to load correctly '+str(360*sleep)+' seconds, did not find the text '+str(text))
         return html_source
     
-    def __fully_downloaded(self, file_path, sleep=5):
+    def __fully_downloaded(self, element, file_path, sleep=5):
         '''Check if a file has fully downloaded by checking between intervals if file size has changed
         
+           element(WebElement)    Element that needs to be clicked to start the download
            file_path(str)   path of file to check if it's finished downloading
            sleep(int)    interval time for checking if file size changed
         '''
+        # remove file if it already exists or it becomes impossible to check if it's finished downloading
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        if os.path.exists(file_path+'.part'):
+            os.remove(file_path+'.part')
+        element.click()
         time.sleep(2)
         logging.info('Checking if a .part file is used: '+file_path+'.part')
         # some filesystems first download a .part file, check if this happens
         if os.path.exists(file_path+'.part'):
             logging.info('Check if '+str(file_path)+'.part finished downloading')
             time.sleep(sleep)
+            x = 0
             while os.path.exists(file_path+'.part'):
                 logging.info('Still downloading, sleep '+str(sleep)+' seconds...')
                 time.sleep(sleep)
+                x += 1
+                if x == 100:
+                    raise RuntimeError('Part file did not get removed after '+str(sleep*x)+' seconds, clean up download folder and try again')
             logging.info(file_path+'.part does not exist anymore, download should be finished')
             assert os.path.exists(file_path)
         else:
@@ -75,6 +86,7 @@ class Download_ENA_samplesheet:
             logging.info('File size did not change the last '+str(sleep)+' seconds, file should be done downloading')
             assert new_size == old_size
             if new_size < old_size:
+                logging.error('During downloading the size of downloaded file became smaller than before. Clean up download folder and try again')
                 raise RuntimeError('New size of downloaded file should never be larger than old size')
         return True
          
@@ -128,18 +140,19 @@ class Download_ENA_samplesheet:
             
             element = self.driver.find_element_by_xpath('//*[@title="Download files and save to disk" and contains(text(), "TEXT")]')
             logging.info('Downloading to '+output_directory+'/ena.txt')
-            element.click()
-            if self.__fully_downloaded(output_directory+'/ena.txt'):
+            if self.__fully_downloaded(element, output_directory+'/ena.txt'):
                 current_datetime = time.strftime("d%dm%my%Y_h%Hm%Ms%S")
                 logging.info('Renaming '+output_directory+'/ena.txt to '+output_directory+'/ena_'+current_datetime+'.txt')
                 shutil.move(output_directory+'/ena.txt', output_directory+'/ena_'+current_datetime+'.txt')
                 self.samplesheet_file = output_directory+'/ena_'+current_datetime+'.txt'
             else:
+                logging.error('Downloading samplesheet did not succeed. Clean up download folder and try again.')
                 raise RuntimeError('__fully_downloaded() did not return True')
             self.quit_browser()
             display.stop()
         except:
             self.quit_browser()
+            logging.error('Downloading samplesheet did not succeed. Clean up download folder and try again.')
             display.stop()
             raise
         
@@ -153,6 +166,7 @@ class Download_ENA_samplesheet:
         if self.samplesheet_file:
             return self.samplesheet_file
         else:
+            logging.error('Can not get samplesheet location without downloading samplesheet first.')
             raise RuntimeError('Need to run download_samplesheet first')
         
     def quit_browser(self):

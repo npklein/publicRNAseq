@@ -12,6 +12,6 @@ download_ena_samplesheet = genotypePublicData.Download_ENA_samplesheet(tax, libr
 download_ena_samplesheet.download_samplesheet('/tmp')
 
 # The location of the samplesheet needs to be retrievable
-ene_samplesheet = download_ena_samplesheet.get_samplesheet_file()
+ena_samplesheet = download_ena_samplesheet.get_samplesheet_file()
 
 assert os.path.exists(ena_samplesheet)
