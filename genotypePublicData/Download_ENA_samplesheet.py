@@ -120,7 +120,7 @@ class Download_ENA_samplesheet:
         
         self.driver = webdriver.Firefox(self.__prevent_download_dialog(output_directory))
         logging.info('Downloading samplesheet for tax_id: '+self.tax_id+' and library strategy: '+self.library_strategy)
-        url = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%289606%29%20AND%20library_strategy=%22RNA-Seq%22%22&domain=read'
+        url = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28'+tax_id+'%29%20AND%20library_strategy=%22'+library_strategy+'%22%22&domain=read'
         logging.info('Using url: '+url)
         try:
             self.driver.get(url)            
