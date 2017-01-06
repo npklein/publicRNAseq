@@ -16,7 +16,7 @@ class Download_ENA_samples:
                             Reports tab, with all columns selected.
                             Can also be downloaded by running Download_ENA_samplesheet (see genotypePublicData README)
         '''
-        self.aspera = aspera_binary
+        self.aspera_binary = aspera_binary
         self.samplesheet = samplesheet
         self.include_list = []
         self.exclude_list = []
@@ -42,6 +42,10 @@ class Download_ENA_samples:
         logging.error(aspera_binary+' does not exist and is not found in PATH. Set correct location for binary when initiating Download_ENA_samples class')        
         raise RuntimeError('Aspera binary not found')
     
+    def set_aspera_binary(self, aspera_binary):
+        '''Set path to aspera binary'''
+        self.aspera_binary = aspera_binary
+        
     def set_include_list(self, include_list):
         '''Samples to include for download'''
         self.include_list = include_list
@@ -85,8 +89,8 @@ class Download_ENA_samples:
            download_protocol(str):   Download protocol to use (def: aspera). Can only be aspera or ftp
         '''
         if download_protocol == 'aspera':
-            self.__check_if_aspera_exists(aspera_binary)
-            logging.info('Found aspera binary at '+aspera_binary)
+            self.__check_if_aspera_exists(self.aspera_binary)
+            logging.info('Found aspera binary at '+self.aspera_binary)
         elif download_protocol != 'ftp':
             logging.error('download_protocol variable given to download_samples was '+download_protocol+', not aspera or ftp')
             raise RuntimeError('download protocol can only be aspera or ftp')
