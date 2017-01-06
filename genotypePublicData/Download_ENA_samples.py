@@ -4,15 +4,17 @@ import time
 import requests
 import os
 import urllib.request 
+from subprocess import Popen, PIPE, STDOUT
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=format)
 class Download_ENA_samples:
-    def __init__(self, samplesheet, aspera_binary='ascp'):
+    def __init__(self, samplesheet, aspera_binary='ascp', aspera_openssh='asperaweb_id_dsa.openssh'):
         '''Initiate download_ENA_samplesheet class by setting tax_id and library_strategy
         
         aspera_binary(str)  Location of the Aspera binary (default: use from PATH) 
-        samplesheet(str)    Samplesheet downloaded from http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%289606%29%20AND%20library_strategy=%22RNA-Seq%22%22&domain=read
+        aspera_openssh(str)  Location of the Aspera openssh (default: use from PATH) 
+        samplesheet(str)    Samplesheet downloaded from http://www.ebi.ac.uk/ena/data/warehouse/search
                             Reports tab, with all columns selected.
                             Can also be downloaded by running Download_ENA_samplesheet (see genotypePublicData README)
         '''
@@ -21,30 +23,37 @@ class Download_ENA_samples:
         self.include_list = []
         self.exclude_list = []
         
-    def __check_if_aspera_exists(self, aspera_binary):
+    def __check_if_aspera_exists(self, aspera_binary, aspera_openssh):
         '''Check if aspera location given in aspera_binary exists or is in PATH
         
            aspera_binary(str):   Location of the Aspera binary
+           aspera_openssh(str)  Location of the Aspera openssh
         '''
-        def is_exe(fpath):
-            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-        fpath, fname = os.path.split(aspera_binary)
-        if fpath:
-            if is_exe(program):
-                return program
-        else:
-            for path in os.environ["PATH"].split(os.pathsep):
-                path = path.strip('"')
-                exe_file = os.path.join(path, aspera_binary)
-                if is_exe(exe_file):
-                    return exe_file
-        logging.error(aspera_binary+' does not exist and is not found in PATH. Set correct location for binary when initiating Download_ENA_samples class')        
-        raise RuntimeError('Aspera binary not found')
+        for program in [aspera_binary, aspera_openssh]:
+            def is_exe(fpath):
+                return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+    
+            fpath, fname = os.path.split(program)
+            if fpath:
+                if is_exe(program):
+                    return program
+            else:
+                for path in os.environ["PATH"].split(os.pathsep):
+                    path = path.strip('"')
+                    exe_file = os.path.join(path, program)
+                    if is_exe(exe_file):
+                        return exe_file
+            logging.error(program+' does not exist and is not found in PATH. Set correct location for binary and openssh key '+
+                          'when initiating Download_ENA_samples class or with set function')        
+            raise RuntimeError('Aspera binary not found')
     
     def set_aspera_binary(self, aspera_binary):
         '''Set path to aspera binary'''
         self.aspera_binary = aspera_binary
+    
+    def set_aspera_openssh(self, aspera_openssh):
+        '''Set path to aspera openssh'''
+        self.aspera_openssh = aspera_openssh   
         
     def set_include_list(self, include_list):
         '''Samples to include for download'''
@@ -82,7 +91,21 @@ class Download_ENA_samples:
         else: # total size is unknown
             logging.info("read %d\n" % (readsofar,))
             time.sleep(5)
+      
+    def __download_sample_with_aspera(self, fastq_aspera_link, download_location):
+        '''Download fastq file using aspera
         
+           fastq_aspera_link(str)   Aspera link to download
+           download_location(str)   Location to save downloaded file at
+        '''
+        command = self.aspera_binary + ' -QT -l 2000m -i ' + self.aspera_openssh + ' ' + fastq_aspera_link + ' ' + download_location
+        p = Popen(command, stdout = PIPE, stderr = STDOUT, shell = True)
+        
+        # read output from process as it is being outputted by aspera
+        while True:
+            line = p.stdout.readline()
+            if not line: break
+            
     def download_samples(self, download_protocol='aspera'):
         '''Download the samples using either aspera or ftp
         
@@ -108,14 +131,17 @@ class Download_ENA_samples:
                     if self.include_list and run_accession in self.include_list:
                         included_samples.append(run_accession)
                         if run_accession not in self.exclude_list:
-                            fastq_file = 'ftp://'+line[header_index['fastq_ftp']]
-                            logging.info('Downloading '+fastq_file+'...')
                             if download_protocol == 'ftp':
-                                urllib.request.urlretrieve(fastq_file, '/tmp/'+fastq_file.split('/')[-1], self.__reporthook)
+                                fastq_ftp_link = 'ftp://'+line[header_index['fastq_ftp']]
+                                logging.info('Downloading '+fastq_ftp_link+' using ftp...')
+                                urllib.request.urlretrieve(fastq_file, '/tmp/'+fastq_ftp_link.split('/')[-1], self.__reporthook)
                             elif download_protocol == 'aspera':
-                                pass
+                                fastq_aspera_link = 'ftp://'+line[header_index['fastq_ftp']]
+                                logging.info('Downloading '+fastq_aspera_link+' using aspera...')
+                                self.__download_sample_with_aspera(fastq_aspera_link)
                             else:
                                 raise RuntimeError('download protocol was not ftp or aspera')
+        
         not_included_samples = [x for x in self.include_list if x not in included_samples]
         if len(not_included_samples):
             logging.warn('Not all samples from include list were present in the samplesheet. Missing: '+'\t'.join(not_included_samples))
