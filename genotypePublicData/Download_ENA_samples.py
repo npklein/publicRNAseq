@@ -19,6 +19,7 @@ class Download_ENA_samples:
                             Can also be downloaded by running Download_ENA_samplesheet (see genotypePublicData README)
         '''
         self.aspera_binary = aspera_binary
+        self.aspera_openssh = aspera_openssh
         self.samplesheet = samplesheet
         self.include_list = []
         self.exclude_list = []
