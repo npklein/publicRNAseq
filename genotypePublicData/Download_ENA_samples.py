@@ -12,7 +12,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=format)
 class Download_ENA_samples:
     def __init__(self, samplesheet, download_location, aspera_binary='ascp', aspera_openssh='asperaweb_id_dsa.openssh'):
-        '''Initiate download_ENA_samplesheet class by setting tax_id and library_strategy
+        '''Initiate download_ENA_samples class
         
         samplesheet(str)    Samplesheet downloaded from http://www.ebi.ac.uk/ena/data/warehouse/search
                             Reports tab, with all columns selected.
@@ -31,6 +31,7 @@ class Download_ENA_samples:
         self.samplesheet = samplesheet
         self.include_list = []
         self.exclude_list = []
+        self.aspera_download_speed = 2000
         
     def __check_if_aspera_exists(self, aspera_binary):
         '''Check if aspera location given in aspera_binary exists or is in PATH
@@ -71,6 +72,13 @@ class Download_ENA_samples:
         '''Samples to exclude for download'''
         self.exclude_list = exclude_list
     
+    def set_aspera_speed(self, speed):
+        '''Set aspera download speed
+        
+           speed(int)   Download speed for Aspera
+        '''
+        self.aspera_download_speed = speed
+    
     def __get_all_indices(self, list_to_index):
         '''Get the indexes of all the items in a list and put them in a dict with key: element, value: index
         
@@ -106,7 +114,7 @@ class Download_ENA_samples:
            fastq_aspera_link(str)   Aspera link to download
            download_location(str)   Location to save downloaded file at
         '''
-        command = [self.aspera_binary,'-QT', '-l 2000m', '-i', self.aspera_openssh,fastq_aspera_link,download_location]
+        command = [self.aspera_binary,'-QT', '-l '+str(self.aspera_download_speed), '-i', self.aspera_openssh,fastq_aspera_link,download_location]
         logging.info('Downloading with the terminal command:\n'+' '.join(command))
         subprocess.call(command)
         
