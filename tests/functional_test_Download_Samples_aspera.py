@@ -7,11 +7,11 @@ from context import genotypePublicData
 # in a select few samples so some samples have to be included and excluded
 # if code from functional_test_DownloadSamplesheet is run can use download_ena_samplesheet.get_samplesheet_file() instead
 ena_samplesheet = 'test_data/ena_example_samplesheet.txt'
-download_ena_samples = genotypePublicData.Download_ENA_samples(ena_samplesheet)
+download_ena_samples = genotypePublicData.Download_ENA_samples(ena_samplesheet, '/tmp/', aspera_openssh='~/.aspera/connect/etc/asperaweb_id_dsa.openssh')
 
 include_list = ['DRR000897','DRR001173','DRR001174']
 exclude_list = ['DRR001174']
 download_ena_samples.set_include_list(include_list)
 download_ena_samples.set_exclude_list(exclude_list)
-# Using the link to the fastq file the files are automatically downloaded to the provided outfolder
+# Using the link to the fastq file the files are automatically downloaded to the provided outfolder using aspera
 download_ena_samples.download_samples()
