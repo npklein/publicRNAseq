@@ -11,7 +11,7 @@ format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=format)
 class Run_Compute:
-    def __init__(self, compute_location, samplesheet, jobs_folder, batch=100):
+    def __init__(self, compute_location, samplesheet, jobs_folder):
         '''Initiate Run_compute class
         
         samplesheet(str)    Samplesheet downloaded from http://www.ebi.ac.uk/ena/data/warehouse/search
@@ -52,8 +52,9 @@ class Run_Compute:
                       'when initiating Download_ENA_samples class or with set function')        
         raise RuntimeError('Aspera binary not found')
         
-    def make_jobs(self):
+    def make_QC_jobs(self):
         pass
-
-    def make_samplesheet(self):
-        header = 'internalId,project,sampleName,reads1FqGz,reads2FqGz'
+    
+    def make_genotyping_jobs(self):
+        pass
+    

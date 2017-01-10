@@ -19,7 +19,12 @@ class Download_ENA_samplesheet:
         self.tax_id = tax_id
         self.library_strategy = library_strategy
         self.samplesheet_file = None
+        self.x11 = False
         
+    def set_x11(self,boolean):
+        '''On some systems Display from pyvirtualdisplay does not work, in that case can try running it with x11 still enabled'''
+        self.x11 = boolean
+    
     def __page_loaded(self, *arg, sleep = 1):
         '''Check if the javascript page has loaded by giving a text to search that is only in the html source when finished loading
            It uses the current page the driver is on
@@ -111,13 +116,20 @@ class Download_ENA_samplesheet:
     
     def download_samplesheet(self, output_directory, tax_id='9606',library_strategy='RNA-Seq'):
         '''Download samplesheet from ENA
-        output_file(str)    output file name for samplesheet    
-        '''
-        # To prevent download dialog
-
-        display = Display(visible=0, size=(1024, 768))
-        display.start()
         
+           output_file(str)    output file name for samplesheet
+        '''
+        if not(os.path.exists(output_directory)):
+            logging.error('Output directory '+output_directory+' does not exist.')
+            raise RuntimeError('Output directory '+output_directory+' does not exist.')
+        output_directory = os.path.abspath(output_directory)
+        # To prevent download dialog
+        if not self.x11:
+            logging.info('Not using X11')
+            display = Display(visible=0, size=(1024, 768))
+            display.start()
+        else:
+            logging.info('Using X11')
         self.driver = webdriver.Firefox(self.__prevent_download_dialog(output_directory))
         logging.info('Downloading samplesheet for tax_id: '+self.tax_id+' and library strategy: '+self.library_strategy)
         url = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28'+tax_id+'%29%20AND%20library_strategy=%22'+library_strategy+'%22%22&domain=read'
@@ -149,11 +161,13 @@ class Download_ENA_samplesheet:
                 logging.error('Downloading samplesheet did not succeed. Clean up download folder and try again.')
                 raise RuntimeError('__fully_downloaded() did not return True')
             self.quit_browser()
-            display.stop()
+            if not self.x11:
+                display.stop()
         except:
             self.quit_browser()
             logging.error('Downloading samplesheet did not succeed. Clean up download folder and try again.')
-            display.stop()
+            if not self.x11:
+                display.stop()
             raise
         
     def set_tax_id(self,taxid):
