@@ -108,7 +108,7 @@ class Download_ENA_samples:
            fastq_aspera_link(str)   Aspera link to download
            download_location(str)   Location to save downloaded file at
         '''
-        command = [self.aspera_binary,'-QT', '-l '+str(self.aspera_download_speed), '-i', self.aspera_openssh,fastq_aspera_link,download_location]
+        command = [self.aspera_binary,'-QT', '-l '+str(self.aspera_download_speed)+'m', '-i', self.aspera_openssh,fastq_aspera_link,download_location]
         logging.info('Downloading with the terminal command:\n'+' '.join(command))
         subprocess.call(command)
         
@@ -166,35 +166,43 @@ class Download_ENA_samples:
             for line in samplesheet_handle:
                 line = line.strip().split('\t')
                 run_accession = line[header_index['run_accession']]
-                download_file_location = self.download_location+run_accession+'.fastq.gz'
                 # exclude list overrides include list
                 # first check if self.include_list is not empty, as include list should only be used when at least one sample is given
                 if self.include_list and run_accession in self.include_list:
                     included_samples.append(run_accession)
                     if run_accession not in self.exclude_list:
-                        x = 0
-                        while not self.__check_md5(download_file_location, line[header_index['fastq_md5']]):
-                            if download_protocol == 'ftp':
-                                fastq_ftp_links = line[header_index['fastq_ftp']].rstrip(';').split(';')
-                                self.__report_number_of_fastq_files(run_accession, len(fastq_ftp_links))
-                                # paired end data will have multiple download links
-                                for fastq_ftp_link in fastq_ftp_links:
+                        if download_protocol == 'ftp':
+                            fastq_ftp_links = line[header_index['fastq_ftp']].rstrip(';').split(';')
+                            self.__report_number_of_fastq_files(run_accession, len(fastq_ftp_links))
+                            # paired end data will have multiple download links
+                            for fastq_ftp_link in fastq_ftp_links:
+                                download_file_location = self.download_location+fastq_ftp_link.split('/')[-1]
+                                x = 0
+                                while not self.__check_md5(download_file_location, line[header_index['fastq_md5']]):
                                     fastq_ftp_link = 'ftp://'+fastq_ftp_link
                                     logging.info('Downloading '+fastq_ftp_link+' using ftp to '+download_file_location+'...')
                                     urllib.request.urlretrieve(fastq_ftp_link, download_file_location, self.__reporthook)
-                            elif download_protocol == 'aspera':
-                                fastq_aspera_links = 'era-fasp@'+line[header_index['fastq_aspera']].rstrip(';').split(';')
-                                self.__report_number_of_fastq_files(len(fastq_aspera_links))
-                                for fastq_aspera_link in fastq_aspera_links:
+                                    x += 1
+                                    if x == 10:
+                                        self.logging.warning('Tried 10 times to download '+run_accession+' but md5sum never correct. Skipping')
+                                    break
+                        elif download_protocol == 'aspera':
+                            fastq_aspera_links = line[header_index['fastq_aspera']].rstrip(';').split(';')
+                            self.__report_number_of_fastq_files(run_accession,len(fastq_aspera_links))
+                            for fastq_aspera_link in fastq_aspera_links:
+                                download_file_location = self.download_location+fastq_aspera_link.split('/')[-1]
+                                x = 0
+                                while not self.__check_md5(download_file_location, line[header_index['fastq_md5']]):
+                                    fastq_aspera_link = 'era-fasp@'+fastq_aspera_link
                                     logging.info('Downloading '+fastq_aspera_link+' using aspera...')
-                                    self.__download_sample_with_aspera(run_accession, fastq_aspera_link, download_file_location)
-                            else:
-                                logging.error('Download protocol was not ftp or aspera')
-                                raise RuntimeError('download protocol was not ftp or aspera')
-                            x += 1
-                            if x == 10:
-                                self.logging.warning('Tried 10 times to download '+run_accession+' but md5sum never correct. Skipping')
-                                break
+                                    self.__download_sample_with_aspera(fastq_aspera_link, download_file_location)
+                                    x += 1
+                                    if x == 10:
+                                        self.logging.warning('Tried 10 times to download '+run_accession+' but md5sum never correct. Skipping')
+                                    break
+                        else:
+                            logging.error('Download protocol was not ftp or aspera')
+                            raise RuntimeError('download protocol was not ftp or aspera')
         not_included_samples = [x for x in self.include_list if x not in included_samples]
         if len(not_included_samples):
             logging.warn('Not all samples from include list were present in the samplesheet. Missing: '+'\t'.join(not_included_samples))

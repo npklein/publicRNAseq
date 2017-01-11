@@ -15,7 +15,7 @@ class Download_SamplesTest(unittest.TestCase):
         if os.path.exists(self.output_root_dir):
             shutil.rmtree(self.output_root_dir)
         os.mkdir(self.output_root_dir)
-        self.download_protocol = 'ftp' # other option is aspera
+        self.download_protocol = 'aspera' # other option is aspera
 
     def tearDown(self):
         pass
@@ -30,7 +30,11 @@ class Download_SamplesTest(unittest.TestCase):
         download_ena_samples.set_exclude_list(exclude_list)
         # Using the link to the fastq file the files are automatically downloaded to the provided outfolder using aspera
         download_ena_samples.download_samples(download_protocol=self.download_protocol)
-
+        self.assertTrue(os.path.exists(self.output_root_dir+'/DRR000897.fastq.gz'))
+        self.assertTrue(os.path.exists(self.output_root_dir+'/DRR001173.fastq.gz'))
+        self.assertFalse(os.path.exists(self.output_root_dir+'/DRR001174.fastq.gz'))
+        self.assertTrue(os.path.exists(self.output_root_dir+'/DRR001622_1.fastq.gz'))
+        self.assertTrue(os.path.exists(self.output_root_dir+'/DRR001622_2.fastq.gz'))
 
 if __name__ == '__main__':  
     unittest.main(warnings='ignore')  
