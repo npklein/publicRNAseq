@@ -27,7 +27,7 @@ class Download_SamplesheetTest(unittest.TestCase):
         download_ena_samplesheet.download_samplesheet(self.output_root_dir)
 
         # The location of the samplesheet needs to be retrievable
-        ena_samplesheet = self.script_dir+'/'+download_ena_samplesheet.get_samplesheet_file()
+        ena_samplesheet = download_ena_samplesheet.get_samplesheet_file()
         pattern = '.*ena_d\d{2}m\d{2}y\d{4}_h\d{2}m\d{2}s\d{2}.txt'
         self.assertTrue(bool(re.match(pattern,ena_samplesheet)), 'samplesheet name not following correct format')
         with open(ena_samplesheet) as input_file:

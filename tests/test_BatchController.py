@@ -5,11 +5,12 @@ import shutil
 
 class BatchControlTest(unittest.TestCase):  
     def setUp(self):
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))+'/'
         # Control Batches can be used to run the whole pipeline and divide the samples up in multiple batches for processing
         # Download starts per batch sequentially, then all jobs from that batch are submitted using Molgenis Compute, and then
         # the next batch starts downloading
-        self.ena_samplesheet = 'test_data/ena_example_samplesheet.txt'
-        self.output_root_dir = 'test_output/'
+        self.ena_samplesheet = self.script_dir+'test_data/ena_example_samplesheet.txt'
+        self.output_root_dir = self.script_dir+'test_output/'
         self.project = 'test'
         shutil.rmtree(self.output_root_dir)
         os.mkdir(self.output_root_dir)
