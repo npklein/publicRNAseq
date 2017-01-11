@@ -36,10 +36,16 @@ class BatchControlTest(unittest.TestCase):
                 
         # We want to set up the project first by creating the directory structure necesarry for putting jobs and results in
         batch_controller.setup_project()
-        for batch in range(0, len(batches),1):
-            self.assertTrue(os.path.exists(self.output_root_dir+'/batch'+str(batch)))
-            self.assertTrue(os.path.exists(self.output_root_dir+'/batch'+str(batch)+'/samplesheet_batch'+str(batch)+'.csv'))
-
+        for batch_number in range(0, len(batches),1):
+            self.assertTrue(os.path.exists(self.output_root_dir+'/batch'+str(batch_number)))
+            self.assertTrue(os.path.exists(self.output_root_dir+'/batch'+str(batch_number)+'/samplesheet_batch'+str(batch_number)+'.csv'))
+            self.assertTrue(os.path.exists(self.output_root_dir+'parameters_QC_batch'+str(batch_number)+'.csv'))
+            lines = 0
+            with open(self.output_root_dir+'parameters_QC_batch'+str(batch_number)+'.csv') as input_file:
+                for line in input_file:
+                    lines += 1
+                self.assertEqual(lines,2, 'Parameter file should be in long format, but has more than 2 lines')
+        
 
         self.assertTrue(os.path.exists(self.output_root_dir+'fastq_downloads'))
         self.assertTrue(os.path.exists(self.output_root_dir+'samples_per_batch.tsv'))

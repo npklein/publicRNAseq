@@ -19,12 +19,13 @@ class BatchController:
         inclusion_list(list)    Samples to include from the samplesheet (def: [] -> no samples get excluded)
         exclusion_list(list)    Samples to exclude from teh samplesheet (def: None -> all samples get includes)
         '''
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))+'/'
         self.samplesheet = samplesheet
         self.inclusion_list = inclusion_list
         self.exclusion_list = exclusion_list
         self.samples_per_batch = samples_per_batch
         self.project = project
-        self.root_dir = root_dir.rstrip('/')
+        self.root_dir = root_dir+'/'
         if self.samples_per_batch < 1:
             logging.error('Need at least 1 sample per batch, now have '+str(self.samples_per_batch)+' samples in one batch')
         if not os.path.exists(self.samplesheet):
@@ -93,7 +94,7 @@ class BatchController:
         '''For each batch, create a samplesheet that compute can use'''
         for batch_number in range(0,len(self.batches),1):
             outfile = self.root_dir+'/batch'+str(batch_number)+'/samplesheet_batch'+str(batch_number)+'.csv'
-            logging.info('Creating samplesheet at '+self.root_dir+'/batch'+str(batch_number)+'/samplesheet_batch'+str(batch_number)+'.csv')
+            logging.info('Creating samplesheet at '+outfile)
             with open(outfile,'w') as out:
                 out.write('internalId,project,sampleName,reads1FqGz,reads2FqGz\n')
                 for sample in self.batches[batch_number]:
@@ -106,11 +107,46 @@ class BatchController:
                     else:
                         logging.error('Number of files for '+sample+' is '+str(number_of_fastq_files)+' dont know what to do if it')
                         RuntimeError('Wrong number of fastq files for '+samples)
-                        
+    
+    def __create_parameter_files(self):
+        '''For each batch, create parameter files'''
+        def convert_to_long_format(parameter_file):
+            transposed_parameter_text = ''
+            with open(parameter_file) as input_file:
+                header = []
+                values = []
+                for line in input_file:
+                    if line.startswith('#') or len(line.strip()) == 0:
+                        continue
+                    line = line.strip().split(',')
+                    header.append(line[0])
+                    values.append(line[1])
+                for index in range(0,len(header),1):
+                    transposed_parameter_text += header[index]+','
+                transposed_parameter_text += '\n'
+                for index in range(0,len(header),1):
+                    transposed_parameter_text += values[index]+','
+            return transposed_parameter_text
+        template = convert_to_long_format(self.script_dir+'../configurations/parameters_QC_template.csv')                    
+        for batch_number in range(0,len(self.batches),1):
+            outfile = self.root_dir+'/batch'+str(batch_number)+'/parameters_QC_batch'+str(batch_number)+'.csv'
+            logging.info('Creating QC pipeline parameter file at '+outfile)
+            new_template = template.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
+            with open(outfile,'w') as out:
+                out.write(new_template)
+    
+    def __create_molgenis_generate_jobs_script(self):
+        '''For each batch, create a molgenis generate script'''
+        for batch_number in range(0, len(self.batches),1):
+            outfile = self.root_dir+'/batch'+str(batch_number)+'/generate_QC_'+str(batch_number)+'.csv'
+    
     def setup_project(self):
         '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts'''
         # rstrip and later add the / so that the path is not printed with // when logging
         
         self.__create_folder_structure()
         self.__create_samples_per_batch_file()
+        self.__create_parameter_files()
+        self.__create_molgenis_generate_jobs_script()
+    
         self.__create_samplesheets()
