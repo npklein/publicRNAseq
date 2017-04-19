@@ -40,12 +40,17 @@ class BatchControlTest(unittest.TestCase):
             self.assertTrue(os.path.exists(self.output_root_dir+'/batch'+str(batch_number)))
             self.assertTrue(os.path.exists(self.output_root_dir+'/batch'+str(batch_number)+'/samplesheet_batch'+str(batch_number)+'.csv'))
             self.assertTrue(os.path.exists(self.output_root_dir+'parameters_QC_batch'+str(batch_number)+'.csv'))
+            self.assertTrue(os.path.exists(self.output_root_dir+'parameters_genotyping_batch'+str(batch_number)+'.csv'))
             lines = 0
             with open(self.output_root_dir+'parameters_QC_batch'+str(batch_number)+'.csv') as input_file:
                 for line in input_file:
                     lines += 1
                 self.assertEqual(lines,2, 'Parameter file should be in long format, but has more than 2 lines')
-        
+            lines = 0
+            with open(self.output_root_dir+'parameters_genotpying_batch'+str(batch_number)+'.csv') as input_file:
+                for line in input_file:
+                    lines += 1
+                self.assertEqual(lines,2, 'Parameter file should be in long format, but has more than 2 lines')        
 
         self.assertTrue(os.path.exists(self.output_root_dir+'fastq_downloads'))
         self.assertTrue(os.path.exists(self.output_root_dir+'samples_per_batch.tsv'))
