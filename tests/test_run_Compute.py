@@ -1,3 +1,4 @@
+'''
 from context import genotypePublicData
 import os
 
@@ -15,3 +16,4 @@ run_compute.set_include_list(include_list)
 run_compute.set_exclude_list(exclude_list)
 # Using the link to the fastq file the files are automatically downloaded to the provided outfolder using aspera
 run_compute.make_jobs()
+'''
