@@ -127,14 +127,20 @@ class BatchController:
                 for index in range(0,len(header),1):
                     transposed_parameter_text += values[index]+','
             return transposed_parameter_text
-        template = convert_to_long_format(self.script_dir+'../configurations/parameters_QC_template.csv')                    
+        template_QC = convert_to_long_format(self.script_dir+'../configurations/parameters_QC_template.csv') 
+        template_genotyping = convert_to_long_format(self.script_dir+'../configurations/parameters_genotyping_template.csv')                    
         for batch_number in range(0,len(self.batches),1):
-            outfile = self.root_dir+'/batch'+str(batch_number)+'/parameters_QC_batch'+str(batch_number)+'.csv'
-            logging.info('Creating QC pipeline parameter file at '+outfile)
-            new_template = template.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
-            with open(outfile,'w') as out:
-                out.write(new_template)
-    
+            outfile_QC = self.root_dir+'/batch'+str(batch_number)+'/parameters_QC_batch'+str(batch_number)+'.csv'
+            outfile_genotyping = self.root_dir+'/batch'+str(batch_number)+'/parameters_genotyping_batch'+str(batch_number)+'.csv'
+            logging.info('Creating QC pipeline parameter file at '+outfile_QC)
+            logging.info('Creating genotyping pipeline parameter file at '+outfile_genotyping)
+            new_template_QC = template_QC.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
+            new_template_genotyping = template_QC.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
+            with open(outfile_QC,'w') as out:
+                out.write(new_template_QC)
+            with open(outfile_genotyping,'w') as out:
+                out.write(new_template_genotyping)
+                    
     def __create_molgenis_generate_jobs_script(self):
         '''For each batch, create a molgenis generate script'''
         for batch_number in range(0, len(self.batches),1):
