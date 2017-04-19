@@ -37,17 +37,18 @@ class BatchControlTest(unittest.TestCase):
         # We want to set up the project first by creating the directory structure necesarry for putting jobs and results in
         batch_controller.setup_project()
         for batch_number in range(0, len(batches),1):
-            self.assertTrue(os.path.exists(self.output_root_dir+'/batch'+str(batch_number)))
-            self.assertTrue(os.path.exists(self.output_root_dir+'/batch'+str(batch_number)+'/samplesheet_batch'+str(batch_number)+'.csv'))
-            self.assertTrue(os.path.exists(self.output_root_dir+'parameters_QC_batch'+str(batch_number)+'.csv'))
-            self.assertTrue(os.path.exists(self.output_root_dir+'parameters_genotyping_batch'+str(batch_number)+'.csv'))
+            batch = 'batch'+str(batch_number)
+            self.assertTrue(os.path.exists(self.output_root_dir+batch))
+            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/samplesheet_batch'+str(batch_number)+'.csv'))
+            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/parameters_QC_batch'+str(batch_number)+'.csv'))
+            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/parameters_genotyping_batch'+str(batch_number)+'.csv'))
             lines = 0
-            with open(self.output_root_dir+'parameters_QC_batch'+str(batch_number)+'.csv') as input_file:
+            with open(self.output_root_dir+batch+'/parameters_QC_'+batch+'.csv') as input_file:
                 for line in input_file:
                     lines += 1
                 self.assertEqual(lines,2, 'Parameter file should be in long format, but has more than 2 lines')
             lines = 0
-            with open(self.output_root_dir+'parameters_genotpying_batch'+str(batch_number)+'.csv') as input_file:
+            with open(self.output_root_dir+batch+'/parameters_genotyping_'+batch+'.csv') as input_file:
                 for line in input_file:
                     lines += 1
                 self.assertEqual(lines,2, 'Parameter file should be in long format, but has more than 2 lines')        
@@ -56,8 +57,15 @@ class BatchControlTest(unittest.TestCase):
         self.assertTrue(os.path.exists(self.output_root_dir+'samples_per_batch.tsv'))
         with open(self.output_root_dir+'samples_per_batch.tsv') as input_file:
             self.assertEqual(input_file.readline(),'batch0\tbatch1\n', 'Header samples_per_batch.tsv not correct')
-            self.assertEqual(input_file.readline(),'DRR000897\tDRR001173\n', 'First line samples_per_batch.tsv not correct')
-            self.assertEqual(input_file.readline(),'DRR001622\n', 'First line samples_per_batch.tsv not correct')
+            line1 = input_file.readline()
+            samples_line1 = line1.strip().split('\t')
+            self.assertTrue('DRR000897' in samples_line1, 'DRR000897 not on line 1')
+            self.assertTrue('DRR001173' in samples_line1, 'DRR001173 not on line 2')
+            self.assertEqual(len(samples_line1), 2, 'Not 2 samples on line 1')
+            line2 = input_file.readline()
+            samples_line2 = line2.strip().split('\t')
+            self.assertTrue('DRR001622' in samples_line2, 'DRR001622 not on line 2')
+            self.assertEqual(len(samples_line2), 1, 'Not 1 sample on line 2')
         
         
         self.fail('Finish the test!') 
