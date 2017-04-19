@@ -11,7 +11,8 @@ class Download_SamplesTest(unittest.TestCase):
     # in a select few samples so some samples have to be included and excluded
     # if code from functional_test_DownloadSamplesheet is run can use download_ena_samplesheet.get_samplesheet_file() instead  
     def setUp(self):
-        self.output_root_dir = 'test_output/'
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))+'/'
+        self.output_root_dir = self.script_dir+'test_output/'
         if os.path.exists(self.output_root_dir):
             shutil.rmtree(self.output_root_dir)
         os.mkdir(self.output_root_dir)
@@ -21,7 +22,7 @@ class Download_SamplesTest(unittest.TestCase):
         pass
 
     def test_download_samples(self):
-        ena_samplesheet = 'test_data/ena_example_samplesheet.txt'
+        ena_samplesheet = self.script_dir+'test_data/ena_example_samplesheet.txt'
         download_ena_samples = genotypePublicData.Download_ENA_samples(ena_samplesheet, self.output_root_dir, aspera_openssh='~/.aspera/connect/etc/asperaweb_id_dsa.openssh')
 
         include_list = ['DRR000897','DRR001173','DRR001174','DRR001622']
