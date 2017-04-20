@@ -29,8 +29,6 @@ class BatchController:
         self.project = project
         self.root_dir = root_dir+'/'
         self.compute_version = compute_version
-        self.parameters_QC_file = None
-        self.molgenis_samplesheet = None
         if self.samples_per_batch < 1:
             logging.error('Need at least 1 sample per batch, now have '+str(self.samples_per_batch)+' samples in one batch')
         if not os.path.exists(self.samplesheet):
@@ -99,9 +97,9 @@ class BatchController:
         '''For each batch, create a samplesheet that compute can use'''
         for batch_number in range(0,len(self.batches),1):
             batch = 'batch'+str(batch_number)
-            self.molgenis_samplesheet = self.root_dir+'/'+batch+'/samplesheet_QC_batch'+str(batch_number)+'.csv'
-            logging.info('Creating samplesheet at '+self.molgenis_samplesheet)
-            with open(self.molgenis_samplesheet,'w') as out:
+            molgenis_samplesheet = self.root_dir+'/'+batch+'/samplesheet_QC_batch'+str(batch_number)+'.csv'
+            logging.info('Creating samplesheet at '+molgenis_samplesheet)
+            with open(molgenis_samplesheet,'w') as out:
                 out.write('internalId,project,sampleName,reads1FqGz,reads2FqGz\n')
                 for sample in self.batches[batch_number]:
                     number_of_fastq_files = len(self.batches[batch_number][sample])
@@ -137,25 +135,20 @@ class BatchController:
         template_genotyping = convert_to_long_format(self.script_dir+'../configurations/parameters_genotyping_template.csv')                    
         for batch_number in range(0,len(self.batches),1):
             batch = 'batch'+str(batch_number)
-            self.parameters_QC_file = self.root_dir+'/'+batch+'/parameters_QC_batch'+str(batch_number)+'.csv'
+            parameters_QC_file = self.root_dir+'/'+batch+'/parameters_QC_batch'+str(batch_number)+'.csv'
             outfile_genotyping = self.root_dir+'/'+batch+'/parameters_genotyping_batch'+str(batch_number)+'.csv'
-            logging.info('Creating QC pipeline parameter file at '+self.parameters_QC_file)
+            logging.info('Creating QC pipeline parameter file at '+parameters_QC_file)
             logging.info('Creating genotyping pipeline parameter file at '+outfile_genotyping)
             new_template_QC = template_QC.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
             new_template_genotyping = template_QC.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
-            with open(self.parameters_QC_file,'w') as out:
+            with open(parameters_QC_file,'w') as out:
                 out.write(new_template_QC)
             with open(outfile_genotyping,'w') as out:
                 out.write(new_template_genotyping)
                     
     def __create_molgenis_generate_jobs_script(self):
         '''For each batch, create a molgenis generate script'''
-        if not self.parameters_QC_file:
-            logging.error('Parameter file location not set yet, __create_parameter_files has to be run first')
-            raise RuntimeError('Parameter file location not set yet, __create_parameter_files has to be run first')
-        if not self.molgenis_samplesheet:
-            logging.error('Samplesheet file location not set yet, __create_samplesheets has to be run first')
-            raise RuntimeError('Samplesheet file location not set yet, __create_samplesheets has to be run first')
+
         for batch_number in range(0, len(self.batches),1):
             batch = 'batch'+str(batch_number)
             generate_QC_file = self.root_dir+'/'+batch+'/generate_QCjobs_'+batch+'.sh'
@@ -164,8 +157,10 @@ class BatchController:
                 out.write('sh $EBROOTMOLGENISMINCOMPUTE/molgenis_compute.sh \\\n')
                 out.write('  --backend slurm \\\n')
                 out.write('  --generate \\\n')
-                out.write('  -p '+self.parameters_QC_file+' \\\n')
-                out.write('  -p '+self.molgenis_samplesheet+' \\\n')
+                parameters_QC_file = self.root_dir+'/'+batch+'/parameters_QC_batch'+str(batch_number)+'.csv'
+                out.write('  -p '+parameters_QC_file+' \\\n')
+                molgenis_samplesheet = self.root_dir+'/'+batch+'/samplesheet_QC_batch'+str(batch_number)+'.csv'
+                out.write('  -p '+molgenis_samplesheet+' \\\n')
                 workflow_location = self.root_dir+'molgenis-pipelines/compute5/Public_RNA-seq_QC/workflows/workflow.csv'
                 out.write('  -w '+workflow_location+' \\\n')
                 out.write('  -rundir rundirs/QC/ --weave')
