@@ -37,6 +37,7 @@ samtoolsVersion,1.2-goolf-1.7.20
 #########################################################################
 ### data versions/builds
 genomeBuild,b37
+jdkVersion,80
 genomeGrchBuild,GRCh37
 human_g1k_vers,37
 ensemblVersion,75
