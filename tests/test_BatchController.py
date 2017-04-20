@@ -68,7 +68,6 @@ class BatchControlTest(unittest.TestCase):
             self.assertEqual(len(samples_line2), 1, 'Not 1 sample on line 2')
         
         
-        self.fail('Finish the test!') 
 
 if __name__ == '__main__':  
     unittest.main(warnings='ignore')  
