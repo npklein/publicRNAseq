@@ -2,8 +2,7 @@ import logging
 import sys
 import os
 from .Utils import Utils
-from git import Repo
-
+import git
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
@@ -100,7 +99,7 @@ class BatchController:
         '''For each batch, create a samplesheet that compute can use'''
         for batch_number in range(0,len(self.batches),1):
             batch = 'batch'+str(batch_number)
-            self.molgenis_samplesheet = self.root_dir+'/'+batch+'/samplesheet_batch'+str(batch_number)+'.csv'
+            self.molgenis_samplesheet = self.root_dir+'/'+batch+'/samplesheet_QC_batch'+str(batch_number)+'.csv'
             logging.info('Creating samplesheet at '+self.molgenis_samplesheet)
             with open(self.molgenis_samplesheet,'w') as out:
                 out.write('internalId,project,sampleName,reads1FqGz,reads2FqGz\n')
@@ -159,23 +158,27 @@ class BatchController:
             raise RuntimeError('Samplesheet file location not set yet, __create_samplesheets has to be run first')
         for batch_number in range(0, len(self.batches),1):
             batch = 'batch'+str(batch_number)
-            generate_QC_file = self.root_dir+'/'+batch+'/generate_QC_'+str(batch_number)+'.sh'
+            generate_QC_file = self.root_dir+'/'+batch+'/generate_QCjobs_'+batch+'.sh'
             with open(generate_QC_file,'w') as out:
                 out.write('module load Molgenis-Compute/'+self.compute_version)
-                out.write('sh $EBROOTMOLGENISMINCOMPUTE/molgenis_compute.sh \\')
-                out.write('  --backend slurm \\')
-                out.write('  --generate \\')
-                out.write('  -p '+self.parameters_QC_file+' \\')
-                out.write('  -p '+self.molgenis_samplesheet+' \\')
+                out.write('sh $EBROOTMOLGENISMINCOMPUTE/molgenis_compute.sh \\\n')
+                out.write('  --backend slurm \\\n')
+                out.write('  --generate \\\n')
+                out.write('  -p '+self.parameters_QC_file+' \\\n')
+                out.write('  -p '+self.molgenis_samplesheet+' \\\n')
                 workflow_location = self.root_dir+'molgenis-pipelines/compute5/Public_RNA-seq_QC/workflows/workflow.csv'
-                out.write('  -w '+workflow_location+' \\')
+                out.write('  -w '+workflow_location+' \\\n')
                 out.write('  -rundir rundirs/QC/ --weave')
 
     
     def __get_molgenis_pipelines(self):
         '''Download the molgenis pipelines from github'''
         logging.info('Cloning molgenis-pipelines')
-        Repo.clone_from('https://github.com/molgenis/molgenis-pipelines.git', self.root_dir+'/molgenis-pipelines/')
+        try:        
+            git.Repo.clone_from('https://github.com/molgenis/molgenis-pipelines.git', self.root_dir+'/molgenis-pipelines/')
+        except git.exc.GitCommandNotFound:
+            logging.error('Possible that git could not be located. Put in path or module load it before running code')
+            raise
         
     def setup_project(self):
         '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts'''

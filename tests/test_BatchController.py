@@ -40,10 +40,10 @@ class BatchControlTest(unittest.TestCase):
         for batch_number in range(0, len(batches),1):
             batch = 'batch'+str(batch_number)
             self.assertTrue(os.path.exists(self.output_root_dir+batch))
-            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/samplesheet_batch'+str(batch_number)+'.csv'))
+            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/samplesheet_QC_batch'+str(batch_number)+'.csv'))
             self.assertTrue(os.path.exists(self.output_root_dir+batch+'/parameters_QC_batch'+str(batch_number)+'.csv'))
             self.assertTrue(os.path.exists(self.output_root_dir+batch+'/parameters_genotyping_'+batch+'.csv'))
-            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/generate_QC_'+batch+'.sh'))
+            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/generate_QCjobs_'+batch+'.sh'))
             lines = 0
             
             with open(self.output_root_dir+batch+'/parameters_QC_'+batch+'.csv') as input_file:
@@ -55,7 +55,7 @@ class BatchControlTest(unittest.TestCase):
                 for line in input_file:
                     lines += 1
                 self.assertEqual(lines,2, 'Parameter file should be in long format, but has more than 2 lines')        
-            with open(self.output_root_dir+batch+'/generate_jobs_'+batch+'.sh') as input_file:
+            with open(self.output_root_dir+batch+'/generate_QCjobs_'+batch+'.sh') as input_file:
                 generate_QC_jobs = input_file.read()
                 self.assertTrue('module load Molgenis-Compute' in generate_QC_jobs, 'No module load in the QC generate script')
                 self.assertTrue(batch in generate_QC_jobs, 'Wrong batch in generate QC jobs script')
