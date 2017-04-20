@@ -93,7 +93,7 @@ class BatchController:
             for batch_index, batch in enumerate(self.batches):
                 out.write('\t'.join(self.batches[batch_index].keys())+'\n')
     
-    def __create_samplesheets(self):
+    def __create_QC_samplesheet(self):
         '''For each batch, create a samplesheet that compute can use'''
         for batch_number in range(0,len(self.batches),1):
             batch = 'batch'+str(batch_number)
@@ -104,10 +104,12 @@ class BatchController:
                 for sample in self.batches[batch_number]:
                     number_of_fastq_files = len(self.batches[batch_number][sample])
                     if number_of_fastq_files == 1:
-                        out.write(sample+','+self.project+','+sample+','+self.batches[batch_number][sample][0]+',\n')
+                        out.write(sample+','+self.project+','+sample+','+
+                                  self.root_dir+'/fastq_downloads/'+self.batches[batch_number][sample][0]+',\n')
                     elif number_of_fastq_files == 2 or number_of_fastq_files == 3:
                         out.write(sample+','+self.project+','+sample+','+
-                                  self.batches[batch_number][sample][0]+','+self.batches[batch_number][sample][1]+'\n')
+                                  self.root_dir+'/fastq_downloads/'+self.batches[batch_number][sample][0]+','+
+                                  self.root_dir+'/fastq_downloads/'+self.batches[batch_number][sample][1]+'\n')
                     else:
                         logging.error('Number of files for '+sample+' is '+str(number_of_fastq_files)+' dont know what to do if it')
                         RuntimeError('Wrong number of fastq files for '+samples)
@@ -148,12 +150,12 @@ class BatchController:
                     
     def __create_molgenis_generate_jobs_script(self):
         '''For each batch, create a molgenis generate script'''
-
         for batch_number in range(0, len(self.batches),1):
             batch = 'batch'+str(batch_number)
-            generate_QC_file = self.root_dir+'/'+batch+'/generate_QCjobs_'+batch+'.sh'
-            with open(generate_QC_file,'w') as out:
-                out.write('module load Molgenis-Compute/'+self.compute_version)
+            generate_QCjobs_file = self.root_dir+'/'+batch+'/generate_QCjobs_'+batch+'.sh'
+            with open(generate_QCjobs_file,'w') as out:
+                out.write('set -e\n')
+                out.write('module load Molgenis-Compute/'+self.compute_version+'\n')
                 out.write('sh $EBROOTMOLGENISMINCOMPUTE/molgenis_compute.sh \\\n')
                 out.write('  --backend slurm \\\n')
                 out.write('  --generate \\\n')
@@ -163,7 +165,7 @@ class BatchController:
                 out.write('  -p '+molgenis_samplesheet+' \\\n')
                 workflow_location = self.root_dir+'molgenis-pipelines/compute5/Public_RNA-seq_QC/workflows/workflow.csv'
                 out.write('  -w '+workflow_location+' \\\n')
-                out.write('  -rundir rundirs/QC/ --weave')
+                out.write('  -rundir '+self.root_dir+'/'+batch+'/rundirs/QC/ --weave')
 
     
     def __get_molgenis_pipelines(self):
@@ -174,6 +176,15 @@ class BatchController:
         except git.exc.GitCommandNotFound:
             logging.error('Possible that git could not be located. Put in path or module load it before running code')
             raise
+    
+    def __generate_jobs(self):
+        '''Use Compute to generate jobs'''
+        logging.info('Compute generating jobs')
+        for batch_number in range(0, len(self.batches),1):
+            batch = 'batch'+str(batch_number)
+            generate_QCjobs_file = self.root_dir+'/'+batch+'/generate_QCjobs_'+batch+'.sh'
+            logging.info('Execute "bash '+generate_QCjobs_file+'"')
+            os.system('bash '+generate_QCjobs_file)
         
     def setup_project(self):
         '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts'''
@@ -182,5 +193,6 @@ class BatchController:
         self.__get_molgenis_pipelines()
         self.__create_samples_per_batch_file()
         self.__create_parameter_files()
-        self.__create_samplesheets()
+        self.__create_QC_samplesheet()
         self.__create_molgenis_generate_jobs_script()
+        self.__generate_jobs()
