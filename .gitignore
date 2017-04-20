@@ -3,3 +3,4 @@ build/
 tests/geckodriver.log
 .DS_Store
 tests/test_output/
+dist

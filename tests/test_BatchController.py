@@ -33,16 +33,19 @@ class BatchControlTest(unittest.TestCase):
         self.assertEqual(batches, [{'DRR000897':['DRR000897.fastq.gz'],
                                    'DRR001173':['DRR001173.fastq.gz']},
                                    {'DRR001622':['DRR001622_1.fastq.gz','DRR001622_2.fastq.gz']}], 'Batch list not the same')
-                
+ 
         # We want to set up the project first by creating the directory structure necesarry for putting jobs and results in
         batch_controller.setup_project()
+        self.assertTrue(os.path.exists(self.output_root_dir+'molgenis-pipelines/'))
         for batch_number in range(0, len(batches),1):
             batch = 'batch'+str(batch_number)
             self.assertTrue(os.path.exists(self.output_root_dir+batch))
-            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/samplesheet_batch'+str(batch_number)+'.csv'))
+            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/samplesheet_QC_batch'+str(batch_number)+'.csv'))
             self.assertTrue(os.path.exists(self.output_root_dir+batch+'/parameters_QC_batch'+str(batch_number)+'.csv'))
-            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/parameters_genotyping_batch'+str(batch_number)+'.csv'))
+            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/parameters_genotyping_'+batch+'.csv'))
+            self.assertTrue(os.path.exists(self.output_root_dir+batch+'/generate_QCjobs_'+batch+'.sh'))
             lines = 0
+            
             with open(self.output_root_dir+batch+'/parameters_QC_'+batch+'.csv') as input_file:
                 for line in input_file:
                     lines += 1
@@ -52,6 +55,10 @@ class BatchControlTest(unittest.TestCase):
                 for line in input_file:
                     lines += 1
                 self.assertEqual(lines,2, 'Parameter file should be in long format, but has more than 2 lines')        
+            with open(self.output_root_dir+batch+'/generate_QCjobs_'+batch+'.sh'):
+                self.fail('Implement test') 
+
+
 
         self.assertTrue(os.path.exists(self.output_root_dir+'fastq_downloads'))
         self.assertTrue(os.path.exists(self.output_root_dir+'samples_per_batch.tsv'))
@@ -66,6 +73,7 @@ class BatchControlTest(unittest.TestCase):
             samples_line2 = line2.strip().split('\t')
             self.assertTrue('DRR001622' in samples_line2, 'DRR001622 not on line 2')
             self.assertEqual(len(samples_line2), 1, 'Not 1 sample on line 2')
+        
         
         
 

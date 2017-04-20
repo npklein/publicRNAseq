@@ -2,12 +2,14 @@ import logging
 import sys
 import os
 from .Utils import Utils
+import git
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=format)
 class BatchController:
-    def __init__(self, samplesheet, samples_per_batch, project, root_dir, inclusion_list=None, exclusion_list=[]):
+    def __init__(self, samplesheet, samples_per_batch, project, root_dir, inclusion_list=None, exclusion_list=[],
+                 compute_version='v16.11.1-Java-1.8.0_74'):
         '''Controller over downloading and dividing into batches of samples.
         
         samplesheet(str)    Samplesheet downloaded from http://www.ebi.ac.uk/ena/data/warehouse/search
@@ -26,6 +28,9 @@ class BatchController:
         self.samples_per_batch = samples_per_batch
         self.project = project
         self.root_dir = root_dir+'/'
+        self.compute_version = compute_version
+        self.parameters_QC_file = None
+        self.molgenis_samplesheet = None
         if self.samples_per_batch < 1:
             logging.error('Need at least 1 sample per batch, now have '+str(self.samples_per_batch)+' samples in one batch')
         if not os.path.exists(self.samplesheet):
@@ -93,9 +98,10 @@ class BatchController:
     def __create_samplesheets(self):
         '''For each batch, create a samplesheet that compute can use'''
         for batch_number in range(0,len(self.batches),1):
-            outfile = self.root_dir+'/batch'+str(batch_number)+'/samplesheet_batch'+str(batch_number)+'.csv'
-            logging.info('Creating samplesheet at '+outfile)
-            with open(outfile,'w') as out:
+            batch = 'batch'+str(batch_number)
+            self.molgenis_samplesheet = self.root_dir+'/'+batch+'/samplesheet_QC_batch'+str(batch_number)+'.csv'
+            logging.info('Creating samplesheet at '+self.molgenis_samplesheet)
+            with open(self.molgenis_samplesheet,'w') as out:
                 out.write('internalId,project,sampleName,reads1FqGz,reads2FqGz\n')
                 for sample in self.batches[batch_number]:
                     number_of_fastq_files = len(self.batches[batch_number][sample])
@@ -130,29 +136,56 @@ class BatchController:
         template_QC = convert_to_long_format(self.script_dir+'../configurations/parameters_QC_template.csv') 
         template_genotyping = convert_to_long_format(self.script_dir+'../configurations/parameters_genotyping_template.csv')                    
         for batch_number in range(0,len(self.batches),1):
-            outfile_QC = self.root_dir+'/batch'+str(batch_number)+'/parameters_QC_batch'+str(batch_number)+'.csv'
-            outfile_genotyping = self.root_dir+'/batch'+str(batch_number)+'/parameters_genotyping_batch'+str(batch_number)+'.csv'
-            logging.info('Creating QC pipeline parameter file at '+outfile_QC)
+            batch = 'batch'+str(batch_number)
+            self.parameters_QC_file = self.root_dir+'/'+batch+'/parameters_QC_batch'+str(batch_number)+'.csv'
+            outfile_genotyping = self.root_dir+'/'+batch+'/parameters_genotyping_batch'+str(batch_number)+'.csv'
+            logging.info('Creating QC pipeline parameter file at '+self.parameters_QC_file)
             logging.info('Creating genotyping pipeline parameter file at '+outfile_genotyping)
             new_template_QC = template_QC.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
             new_template_genotyping = template_QC.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
-            with open(outfile_QC,'w') as out:
+            with open(self.parameters_QC_file,'w') as out:
                 out.write(new_template_QC)
             with open(outfile_genotyping,'w') as out:
                 out.write(new_template_genotyping)
                     
     def __create_molgenis_generate_jobs_script(self):
         '''For each batch, create a molgenis generate script'''
+        if not self.parameters_QC_file:
+            logging.error('Parameter file location not set yet, __create_parameter_files has to be run first')
+            raise RuntimeError('Parameter file location not set yet, __create_parameter_files has to be run first')
+        if not self.molgenis_samplesheet:
+            logging.error('Samplesheet file location not set yet, __create_samplesheets has to be run first')
+            raise RuntimeError('Samplesheet file location not set yet, __create_samplesheets has to be run first')
         for batch_number in range(0, len(self.batches),1):
-            outfile = self.root_dir+'/batch'+str(batch_number)+'/generate_QC_'+str(batch_number)+'.csv'
+            batch = 'batch'+str(batch_number)
+            generate_QC_file = self.root_dir+'/'+batch+'/generate_QCjobs_'+batch+'.sh'
+            with open(generate_QC_file,'w') as out:
+                out.write('module load Molgenis-Compute/'+self.compute_version)
+                out.write('sh $EBROOTMOLGENISMINCOMPUTE/molgenis_compute.sh \\\n')
+                out.write('  --backend slurm \\\n')
+                out.write('  --generate \\\n')
+                out.write('  -p '+self.parameters_QC_file+' \\\n')
+                out.write('  -p '+self.molgenis_samplesheet+' \\\n')
+                workflow_location = self.root_dir+'molgenis-pipelines/compute5/Public_RNA-seq_QC/workflows/workflow.csv'
+                out.write('  -w '+workflow_location+' \\\n')
+                out.write('  -rundir rundirs/QC/ --weave')
+
     
+    def __get_molgenis_pipelines(self):
+        '''Download the molgenis pipelines from github'''
+        logging.info('Cloning molgenis-pipelines')
+        try:        
+            git.Repo.clone_from('https://github.com/molgenis/molgenis-pipelines.git', self.root_dir+'/molgenis-pipelines/')
+        except git.exc.GitCommandNotFound:
+            logging.error('Possible that git could not be located. Put in path or module load it before running code')
+            raise
+        
     def setup_project(self):
         '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts'''
-        # rstrip and later add the / so that the path is not printed with // when logging
-        
+        # rstrip and later add the / so that the path is not printed with // when logging    
         self.__create_folder_structure()
+        self.__get_molgenis_pipelines()
         self.__create_samples_per_batch_file()
         self.__create_parameter_files()
-        self.__create_molgenis_generate_jobs_script()
-    
         self.__create_samplesheets()
+        self.__create_molgenis_generate_jobs_script()
