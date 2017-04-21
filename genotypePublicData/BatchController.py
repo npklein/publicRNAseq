@@ -3,7 +3,7 @@ import sys
 import os
 from .Utils import Utils
 from .Compute import Compute
-from Download_ENA_samples import Download_ENA_samples
+from .Download_ENA_samples import Download_ENA_samples
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
