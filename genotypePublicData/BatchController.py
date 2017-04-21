@@ -98,7 +98,7 @@ class BatchController:
         '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts'''
         # rstrip and later add the / so that the path is not printed with // when logging    
         self.__create_folder_structure()
-        compute = Compute(self.root_dir, self.batches, )
+        compute = Compute(self.root_dir, self.batches, self.project)
         compute.get_molgenis_pipelines()
         self.__create_samples_per_batch_file()
         compute.create_parameter_files(self.script_dir+'/../configurations/')
