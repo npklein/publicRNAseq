@@ -112,5 +112,5 @@ class BatchController:
         batch_number(int):     Number of the batch to download samples for
         '''
         logging.info('Downloading samples for batch '+str(batc_number))
-        download_samples = Download_ENA_samples.Download_ENA_samples(self.ena_samplesheet, self.root_dir+'/fastq_downloads/',
+        download_samples = Download_ENA_samples(self.ena_samplesheet, self.root_dir+'/fastq_downloads/',
                  inclusion_list = self.batches[batch_number])
