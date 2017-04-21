@@ -16,21 +16,21 @@ class Download_SamplesTest(unittest.TestCase):
         if os.path.exists(self.output_root_dir):
             shutil.rmtree(self.output_root_dir)
         os.mkdir(self.output_root_dir)
-        self.download_protocol = 'aspera' # other option is aspera
+        self.download_protocol = 'aspera' # aspera or sftp
 
     def tearDown(self):
         pass
 
-    def test_download_samples(self):
+    def test_start(self):
         ena_samplesheet = self.script_dir+'test_data/ena_example_samplesheet.txt'
-        download_ena_samples = genotypePublicData.Download_ENA_samples(ena_samplesheet, self.output_root_dir, aspera_openssh='~/.aspera/connect/etc/asperaweb_id_dsa.openssh')
+        download_ena_samples = genotypePublicData.Download_ENA_samples(ena_samplesheet, self.output_root_dir)
 
         include_list = ['DRR000897','DRR001173','DRR001174','DRR001622']
         exclude_list = ['DRR001174']
-        download_ena_samples.set_include_list(include_list)
-        download_ena_samples.set_exclude_list(exclude_list)
+        download_ena_samples.set_inclusion_list(include_list)
+        download_ena_samples.set_exclusion_list(exclude_list)
         # Using the link to the fastq file the files are automatically downloaded to the provided outfolder using aspera
-        download_ena_samples.download_samples(download_protocol=self.download_protocol)
+        download_ena_samples.start(download_protocol=self.download_protocol)
         self.assertTrue(os.path.exists(self.output_root_dir+'/DRR000897.fastq.gz'))
         self.assertTrue(os.path.exists(self.output_root_dir+'/DRR001173.fastq.gz'))
         self.assertFalse(os.path.exists(self.output_root_dir+'/DRR001174.fastq.gz'))

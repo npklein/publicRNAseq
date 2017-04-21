@@ -12,7 +12,8 @@ format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=format)
 class Download_ENA_samples:
-    def __init__(self, samplesheet, download_location, aspera_binary='ascp', aspera_openssh='asperaweb_id_dsa.openssh',
+    def __init__(self, samplesheet, download_location, aspera_binary='ascp', 
+                 aspera_openssh='~/.aspera/connect/etc/asperaweb_id_dsa.openssh',
                  inclusion_list = [], exclusion_list = []):
         '''Initiate download_ENA_samples class
         
@@ -21,7 +22,7 @@ class Download_ENA_samples:
                             Can also be downloaded by running Download_ENA_samplesheet (see genotypePublicData README)
         download_location(str):   Location to store the downloaded fastq files at
         aspera_binary(str)  Location of the Aspera binary (default: use from PATH) 
-        aspera_openssh(str)  Location of the Aspera openssh (default: use from PATH) 
+        aspera_openssh(str)  Location of the Aspera openssh (default: ~/.aspera/connect/etc/asperaweb_id_dsa.openssh) 
         inclusion_list(list)    Samples to download (def: [] -> no samples get excluded)
         exclusion_list(list)    Samples to exclude from download (def: None -> all samples get included)
         '''
@@ -30,7 +31,7 @@ class Download_ENA_samples:
         self.aspera_openssh = os.path.expanduser(aspera_openssh)
         if not os.path.isdir(download_location):
             logging.error('Download destination directory '+download_location+' does not exist')
-            raise RuntimeError('Download destination directory does not exist')
+            raise RuntimeError('Download destination directory '+download_location+' does not exist')
         self.download_location = download_location
         self.samplesheet = samplesheet
         self.inclusion_list = inclusion_list
@@ -147,7 +148,7 @@ class Download_ENA_samples:
             logging.error('Expected 1-3 fastq files, got'+str(number_of_fastq_download_links)+'. Check your ena samplesheet')
             logging.error('Unexpected number of fastq files. Expected 1-3 fastq files, got'+str(number_of_fastq_download_links))    
         
-    def download_samples(self, download_protocol='aspera'):
+    def start(self, download_protocol='aspera'):
         '''Download the samples using either aspera or ftp
         
            download_protocol(str):   Download protocol to use (def: aspera). Can only be aspera or ftp

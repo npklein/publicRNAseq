@@ -18,16 +18,23 @@ class BatchControlTest(unittest.TestCase):
         include_list = ['DRR000897','DRR001173','DRR001174','DRR001622']
         # some samples need to be excluded
         exclude_list = ['DRR001174']
+        # folder structure is created when initializing
         self.batch_controller = genotypePublicData.BatchController(self.ena_samplesheet, samples_per_batch=2, project=self.project, 
                                                               root_dir=self.output_root_dir,inclusion_list=include_list, exclusion_list=exclude_list)
 
+<<<<<<< HEAD
         # We want to set up the project first by creating the directory structure necesarry for putting jobs and results in
         self.batch_controller.setup_project()
     
+=======
+
+>>>>>>> 6fd0bee40b9230e8e75783fc6550798444c37fea
     def tearDown(self):
         pass
 
     def test_can_read_in_samplesheet_and_make_batches(self):  
+        # setup project by generating samplesheets, parameter files etc
+        self.batch_controller.setup_project(echo_output=False)
         self.assertEqual(self.batch_controller.number_of_excluded_samples,7)
         # We can get the created batches from batch_controller 
         batches = self.batch_controller.get_batches()
@@ -37,7 +44,6 @@ class BatchControlTest(unittest.TestCase):
                                    'DRR001173':['DRR001173.fastq.gz']},
                                    {'DRR001622':['DRR001622_1.fastq.gz','DRR001622_2.fastq.gz']}], 'Batch list not the same')
  
-
         self.assertTrue(os.path.exists(self.output_root_dir+'molgenis-pipelines/'))
         for batch_number in range(0, len(batches),1):
             batch = 'batch'+str(batch_number)
@@ -78,7 +84,7 @@ class BatchControlTest(unittest.TestCase):
             self.assertEqual(len(samples_line2), 1, 'Not 1 sample on line 2')
         
         
-    def can_download_samples(self):
+    def test_can_download_samples(self):
         '''Download the samples one batch at a time'''
         self.batch_controller.download_samples(0)
         self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR000897.fastq.gz'))
@@ -91,6 +97,8 @@ class BatchControlTest(unittest.TestCase):
         self.batch_controller.download_samples(1)
         self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_1.fastq.gz'))
         self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_2.fastq.gz'))
+
+
 if __name__ == '__main__':  
     unittest.main(warnings='ignore')  
 

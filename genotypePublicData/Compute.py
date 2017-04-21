@@ -1,3 +1,4 @@
+import subprocess
 import logging
 import sys
 import os
@@ -117,12 +118,15 @@ class Compute:
             logging.error('Possible that git could not be located. Put in path or module load it before running code')
             raise
                         
-    def generate_jobs(self):
+    def generate_jobs(self, echo_output=True):
         '''Use Compute to generate jobs'''
         logging.info('Compute generating jobs')
         for batch_number in range(0, len(self.batches),1):
             batch = 'batch'+str(batch_number)
             generate_QCjobs_file = self.root_dir+'/'+batch+'/generate_QCjobs_'+batch+'.sh'
             logging.info('Execute "bash '+generate_QCjobs_file+'"')
-            os.system('bash '+generate_QCjobs_file)
-        
+            if not echo_output:
+                with open(os.devnull, 'wb') as devnull:
+                    subprocess.check_call(['bash', generate_QCjobs_file], stdout=devnull, stderr=subprocess.STDOUT)
+            else:
+                subprocess.check_call(['bash', generate_QCjobs_file])        

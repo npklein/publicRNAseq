@@ -37,7 +37,7 @@ class ComputeTest(unittest.TestCase):
         compute.create_molgenis_generate_jobs_script(self.compute_version)
         
         #generate jobs
-        compute.generate_jobs()
+        compute.generate_jobs(echo_output=False)
 
         for batch_number in range(0, len(batches),1):
             batch = 'batch'+str(batch_number)

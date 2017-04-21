@@ -4,10 +4,14 @@ Needs Python 3 (tested with 3.5.2)
 
 To install, do 
 
-    pip install -r requirements.txt
     python setup.py install 
 
+To run all unittests, do
 
+    python setup.py test
+
+
+# BELOW IS OUT OF DATE
 To download the current RNA-seq samplesheet to your /tmp directory
 
     import genotypePublicData
