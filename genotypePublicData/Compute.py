@@ -18,7 +18,7 @@ class Compute:
         self.batches = self.batches
         self.project = self.project
         
-    def create_QC_samplesheet(self.project):
+    def create_QC_samplesheet(self):
         '''For each batch, create a samplesheet that compute can use'''
         for batch_number in range(0,len(self.batches),1):
             batch = 'batch'+str(batch_number)
@@ -39,7 +39,7 @@ class Compute:
                         logging.error('Number of files for '+sample+' is '+str(number_of_fastq_files)+' dont know what to do if it')
                         RuntimeError('Wrong number of fastq files for '+samples)
     
-    def create_molgenis_generate_jobs_script(compute_version):
+    def create_molgenis_generate_jobs_script(self, compute_version):
         '''For each batch, create a molgenis generate script
     
         compute_version (str)   Version of compute to use
@@ -61,7 +61,7 @@ class Compute:
                 out.write('  -w '+workflow_location+' \\\n')
                 out.write('  -rundir '+self.root_dir+'/'+batch+'/rundirs/QC/ --weave')
 
-    def create_parameter_files(parameter_configuration_dir):
+    def create_parameter_files(self, parameter_configuration_dir):
         '''For each batch, create parameter files
         
         parameter_configuration (str)   Directory with files with parameter configurations
