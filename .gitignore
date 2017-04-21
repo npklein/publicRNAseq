@@ -5,3 +5,4 @@ tests/geckodriver.log
 tests/test_output/
 dist
 genotypePublicData.egg-info/
+MANIFEST
