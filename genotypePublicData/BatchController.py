@@ -3,7 +3,7 @@ import sys
 import os
 from .Utils import Utils
 from .Compute import Compute
-from Download_ENA_samples import Download_ENA_samples
+from .Download_ENA_samples import Download_ENA_samples
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
@@ -111,5 +111,6 @@ class BatchController:
         
         batch_number(int):     Number of the batch to download samples for
         '''
+        logging.info('Downloading samples for batch '+str(batc_number))
         download_samples = Download_ENA_samples.Download_ENA_samples(self.ena_samplesheet, self.root_dir+'/fastq_downloads/',
                  inclusion_list = self.batches[batch_number])
