@@ -2,6 +2,7 @@ import logging
 import sys
 import os
 from .Utils import Utils
+from .Samplesheets import Samplesheets
 import git
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
@@ -93,27 +94,6 @@ class BatchController:
             for batch_index, batch in enumerate(self.batches):
                 out.write('\t'.join(self.batches[batch_index].keys())+'\n')
     
-    def __create_QC_samplesheet(self):
-        '''For each batch, create a samplesheet that compute can use'''
-        for batch_number in range(0,len(self.batches),1):
-            batch = 'batch'+str(batch_number)
-            molgenis_samplesheet = self.root_dir+'/'+batch+'/samplesheet_QC_batch'+str(batch_number)+'.csv'
-            logging.info('Creating samplesheet at '+molgenis_samplesheet)
-            with open(molgenis_samplesheet,'w') as out:
-                out.write('internalId,project,sampleName,reads1FqGz,reads2FqGz\n')
-                for sample in self.batches[batch_number]:
-                    number_of_fastq_files = len(self.batches[batch_number][sample])
-                    if number_of_fastq_files == 1:
-                        out.write(sample+','+self.project+','+sample+','+
-                                  self.root_dir+'/fastq_downloads/'+self.batches[batch_number][sample][0]+',\n')
-                    elif number_of_fastq_files == 2 or number_of_fastq_files == 3:
-                        out.write(sample+','+self.project+','+sample+','+
-                                  self.root_dir+'/fastq_downloads/'+self.batches[batch_number][sample][0]+','+
-                                  self.root_dir+'/fastq_downloads/'+self.batches[batch_number][sample][1]+'\n')
-                    else:
-                        logging.error('Number of files for '+sample+' is '+str(number_of_fastq_files)+' dont know what to do if it')
-                        RuntimeError('Wrong number of fastq files for '+samples)
-    
     def __create_parameter_files(self):
         '''For each batch, create parameter files'''
         def convert_to_long_format(parameter_file):
@@ -193,6 +173,7 @@ class BatchController:
         self.__get_molgenis_pipelines()
         self.__create_samples_per_batch_file()
         self.__create_parameter_files()
-        self.__create_QC_samplesheet()
+        print(self.batches)
+        Samplesheets.create_QC_samplesheet()
         self.__create_molgenis_generate_jobs_script()
         self.__generate_jobs()
