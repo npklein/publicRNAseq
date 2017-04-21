@@ -3,17 +3,17 @@ import sys
 import os
 from .Utils import Utils
 from .Compute import Compute
-
+from .Download_ENA_samples import Download_ENA_samples
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=format)
 class BatchController:
-    def __init__(self, samplesheet, samples_per_batch, project, root_dir, inclusion_list=None, exclusion_list=[],
+    def __init__(self, ena_samplesheet, samples_per_batch, project, root_dir, inclusion_list=None, exclusion_list=[],
                  compute_version='v16.11.1-Java-1.8.0_74'):
         '''Controller over downloading and dividing into batches of samples.
         
-        samplesheet(str)    Samplesheet downloaded from http://www.ebi.ac.uk/ena/data/warehouse/search
+        ena_samplesheet(str)    Samplesheet downloaded from http://www.ebi.ac.uk/ena/data/warehouse/search
                             Reports tab, with all columns selected.
                             Can also be downloaded by running Download_ENA_samplesheet (see genotypePublicData README)
         samples_per_batch(int)    Number of samples to process in one batch
@@ -23,7 +23,7 @@ class BatchController:
         exclusion_list(list)    Samples to exclude from teh samplesheet (def: None -> all samples get includes)
         '''
         self.script_dir = os.path.dirname(os.path.abspath(__file__))+'/'
-        self.samplesheet = samplesheet
+        self.ena_samplesheet = ena_samplesheet
         self.inclusion_list = inclusion_list
         self.exclusion_list = exclusion_list
         self.samples_per_batch = samples_per_batch
@@ -32,18 +32,19 @@ class BatchController:
         self.compute_version = compute_version
         if self.samples_per_batch < 1:
             logging.error('Need at least 1 sample per batch, now have '+str(self.samples_per_batch)+' samples in one batch')
-        if not os.path.exists(self.samplesheet):
+        if not os.path.exists(self.ena_samplesheet):
             logging.error('Samplesheet '+samplesheet+' does not exist')
             raise RuntimeError('Samplesheet '+samplesheet+' does not exist')
         self.__create_batches()
-        
+        self.__create_folder_structure()
+
     def __create_batches(self):
         '''Create the batches by adding samples that are in the inclusion list (if None add all) and not in the exclusion list
            Exclusion list trumps inclusion list (sample in both inclusion and exclusion list will be excluded)'''
         self.batches = [{}]
         self.number_of_excluded_samples = 0
         included_samples = 0
-        with open(self.samplesheet,'r', encoding='utf-8') as input_file:
+        with open(self.ena_samplesheet,'r', encoding='utf-8') as input_file:
             samplesheet_header = input_file.readline().split('\t')
             samplesheet_header_index = Utils.get_all_indices(samplesheet_header)
             samples_in_current_batch = 0
@@ -94,14 +95,29 @@ class BatchController:
             for batch_index, batch in enumerate(self.batches):
                 out.write('\t'.join(self.batches[batch_index].keys())+'\n')
     
-    def setup_project(self):
-        '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts'''
+    def setup_project(self, echo_output=True):
+        '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts
+
+        echo_output(bool):   Wether or not to echo compute output (mostly for testing purposes)
+        '''
         # rstrip and later add the / so that the path is not printed with // when logging    
-        self.__create_folder_structure()
         compute = Compute(self.root_dir, self.batches, self.project)
         compute.get_molgenis_pipelines()
         self.__create_samples_per_batch_file()
         compute.create_parameter_files(self.script_dir+'/../configurations/')
         compute.create_QC_samplesheet()
         compute.create_molgenis_generate_jobs_script(self.compute_version)
-        compute.generate_jobs()
+        compute.generate_jobs(echo_output)
+    
+    def download_samples(self, batch_number, aspera_openssh='~/.aspera/connect/etc/asperaweb_id_dsa.openssh'):
+        '''Download samples of certain batch
+        
+        batch_number(int):     Number of the batch to download samples for
+        aspera_binary(str)  Location of the Aspera binary (default: use from PATH)
+        aspera_openssh(str)  Location of the Aspera openssh (default: ~/.aspera/connect/etc/asperaweb_id_dsa.openssh)
+        '''
+        logging.info('Downloading '+str(len(self.batches[batch_number]))+' samples for batch '+str(batch_number)+' to '+self.root_dir+'/fastq_downloads/')
+        download_samples = Download_ENA_samples(samplesheet = self.ena_samplesheet, 
+                                                download_location = self.root_dir+'/fastq_downloads/',
+                                                inclusion_list = self.batches[batch_number])
+        download_samples.start()

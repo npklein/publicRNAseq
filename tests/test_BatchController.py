@@ -14,28 +14,36 @@ class BatchControlTest(unittest.TestCase):
         self.project = 'test'
         shutil.rmtree(self.output_root_dir)
         os.mkdir(self.output_root_dir)
-
-    def tearDown(self):
-        pass
-
-    def test_can_read_in_samplesheet_and_make_batches(self):  
         # some samples need to be included from the samplesheet
         include_list = ['DRR000897','DRR001173','DRR001174','DRR001622']
         # some samples need to be excluded
         exclude_list = ['DRR001174']
-        batch_controller = genotypePublicData.BatchController(self.ena_samplesheet, samples_per_batch=2, project=self.project, 
+        # folder structure is created when initializing
+        self.batch_controller = genotypePublicData.BatchController(self.ena_samplesheet, samples_per_batch=2, project=self.project, 
                                                               root_dir=self.output_root_dir,inclusion_list=include_list, exclusion_list=exclude_list)
-        self.assertEqual(batch_controller.number_of_excluded_samples,7)
+
+<<<<<<< HEAD
+        # We want to set up the project first by creating the directory structure necesarry for putting jobs and results in
+        self.batch_controller.setup_project()
+    
+=======
+
+>>>>>>> 6fd0bee40b9230e8e75783fc6550798444c37fea
+    def tearDown(self):
+        pass
+
+    def test_can_read_in_samplesheet_and_make_batches(self):  
+        # setup project by generating samplesheets, parameter files etc
+        self.batch_controller.setup_project(echo_output=False)
+        self.assertEqual(self.batch_controller.number_of_excluded_samples,7)
         # We can get the created batches from batch_controller 
-        batches = batch_controller.get_batches()
+        batches = self.batch_controller.get_batches()
         # The batch controller should contain 2 batches, one with 2 samples and one with 1 sample
         self.assertEqual(len(batches), 2, 'Does not contain 2 batches')
         self.assertEqual(batches, [{'DRR000897':['DRR000897.fastq.gz'],
                                    'DRR001173':['DRR001173.fastq.gz']},
                                    {'DRR001622':['DRR001622_1.fastq.gz','DRR001622_2.fastq.gz']}], 'Batch list not the same')
  
-        # We want to set up the project first by creating the directory structure necesarry for putting jobs and results in
-        batch_controller.setup_project()
         self.assertTrue(os.path.exists(self.output_root_dir+'molgenis-pipelines/'))
         for batch_number in range(0, len(batches),1):
             batch = 'batch'+str(batch_number)
@@ -76,7 +84,20 @@ class BatchControlTest(unittest.TestCase):
             self.assertEqual(len(samples_line2), 1, 'Not 1 sample on line 2')
         
         
+    def test_can_download_samples(self):
+        '''Download the samples one batch at a time'''
+        self.batch_controller.download_samples(0)
+        self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR000897.fastq.gz'))
+        self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001173.fastq.gz'))
+        # check the second batch is not downloaded yet
+        self.assertFalse(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_1.fastq.gz'))
+        self.assertFalse(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_2.fastq.gz'))
         
+        # now check if it does get downloaded with second batch
+        self.batch_controller.download_samples(1)
+        self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_1.fastq.gz'))
+        self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_2.fastq.gz'))
+
 
 if __name__ == '__main__':  
     unittest.main(warnings='ignore')  

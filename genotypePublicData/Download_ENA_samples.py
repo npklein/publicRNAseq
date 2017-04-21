@@ -12,7 +12,9 @@ format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=format)
 class Download_ENA_samples:
-    def __init__(self, samplesheet, download_location, aspera_binary='ascp', aspera_openssh='asperaweb_id_dsa.openssh'):
+    def __init__(self, samplesheet, download_location, aspera_binary='ascp', 
+                 aspera_openssh='~/.aspera/connect/etc/asperaweb_id_dsa.openssh',
+                 inclusion_list = [], exclusion_list = []):
         '''Initiate download_ENA_samples class
         
         samplesheet(str)    Samplesheet downloaded from http://www.ebi.ac.uk/ena/data/warehouse/search
@@ -20,18 +22,20 @@ class Download_ENA_samples:
                             Can also be downloaded by running Download_ENA_samplesheet (see genotypePublicData README)
         download_location(str):   Location to store the downloaded fastq files at
         aspera_binary(str)  Location of the Aspera binary (default: use from PATH) 
-        aspera_openssh(str)  Location of the Aspera openssh (default: use from PATH) 
+        aspera_openssh(str)  Location of the Aspera openssh (default: ~/.aspera/connect/etc/asperaweb_id_dsa.openssh) 
+        inclusion_list(list)    Samples to download (def: [] -> no samples get excluded)
+        exclusion_list(list)    Samples to exclude from download (def: None -> all samples get included)
         '''
         # os.path.expanduser changes ~ into homedir
         self.aspera_binary = os.path.expanduser(aspera_binary)
         self.aspera_openssh = os.path.expanduser(aspera_openssh)
         if not os.path.isdir(download_location):
             logging.error('Download destination directory '+download_location+' does not exist')
-            raise RuntimeError('Download destination directory does not exist')
+            raise RuntimeError('Download destination directory '+download_location+' does not exist')
         self.download_location = download_location
         self.samplesheet = samplesheet
-        self.include_list = []
-        self.exclude_list = []
+        self.inclusion_list = inclusion_list
+        self.exclusion_list = exclusion_list
         self.aspera_download_speed = 2000
         self.previous_percent = -1
         
@@ -66,13 +70,13 @@ class Download_ENA_samples:
         '''Set path to aspera openssh'''
         self.aspera_openssh = aspera_openssh   
         
-    def set_include_list(self, include_list):
+    def set_inclusion_list(self, inclusion_list):
         '''Samples to include for download'''
-        self.include_list = include_list
+        self.inclusion_list = inclusion_list
     
-    def set_exclude_list(self, exclude_list):
+    def set_exclusion_list(self, exclusion_list):
         '''Samples to exclude for download'''
-        self.exclude_list = exclude_list
+        self.exclusion_list = exclusion_list
     
     def set_aspera_speed(self, speed):
         '''Set aspera download speed
@@ -144,7 +148,7 @@ class Download_ENA_samples:
             logging.error('Expected 1-3 fastq files, got'+str(number_of_fastq_download_links)+'. Check your ena samplesheet')
             logging.error('Unexpected number of fastq files. Expected 1-3 fastq files, got'+str(number_of_fastq_download_links))    
         
-    def download_samples(self, download_protocol='aspera'):
+    def start(self, download_protocol='aspera'):
         '''Download the samples using either aspera or ftp
         
            download_protocol(str):   Download protocol to use (def: aspera). Can only be aspera or ftp
@@ -167,10 +171,10 @@ class Download_ENA_samples:
                 line = line.strip().split('\t')
                 run_accession = line[header_index['run_accession']]
                 # exclude list overrides include list
-                # first check if self.include_list is not empty, as include list should only be used when at least one sample is given
-                if self.include_list and run_accession in self.include_list:
+                # first check if self.inclusion_list is not empty, as include list should only be used when at least one sample is given
+                if self.inclusion_list and run_accession in self.inclusion_list:
                     included_samples.append(run_accession)
-                    if run_accession not in self.exclude_list:
+                    if run_accession not in self.exclusion_list:
                         if download_protocol == 'ftp':
                             fastq_ftp_links = line[header_index['fastq_ftp']].rstrip(';').split(';')
                             self.__report_number_of_fastq_files(run_accession, len(fastq_ftp_links))
@@ -203,7 +207,7 @@ class Download_ENA_samples:
                         else:
                             logging.error('Download protocol was not ftp or aspera')
                             raise RuntimeError('download protocol was not ftp or aspera')
-        not_included_samples = [x for x in self.include_list if x not in included_samples]
+        not_included_samples = [x for x in self.inclusion_list if x not in included_samples]
         if len(not_included_samples):
             logging.warn('Not all samples from include list were present in the samplesheet. Missing: '+'\t'.join(not_included_samples))
     

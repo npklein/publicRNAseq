@@ -4,3 +4,5 @@ tests/geckodriver.log
 .DS_Store
 tests/test_output/
 dist
+genotypePublicData.egg-info/
+MANIFEST
