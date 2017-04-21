@@ -2,12 +2,15 @@ import logging
 import sys
 import os
 from .Utils import Utils
+from .Compute import Compute
+
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
                     format=format)
 class BatchController:
-    def __init__(self, samplesheet, samples_per_batch, project, root_dir, inclusion_list=None, exclusion_list=[]):
+    def __init__(self, samplesheet, samples_per_batch, project, root_dir, inclusion_list=None, exclusion_list=[],
+                 compute_version='v16.11.1-Java-1.8.0_74'):
         '''Controller over downloading and dividing into batches of samples.
         
         samplesheet(str)    Samplesheet downloaded from http://www.ebi.ac.uk/ena/data/warehouse/search
@@ -26,6 +29,7 @@ class BatchController:
         self.samples_per_batch = samples_per_batch
         self.project = project
         self.root_dir = root_dir+'/'
+        self.compute_version = compute_version
         if self.samples_per_batch < 1:
             logging.error('Need at least 1 sample per batch, now have '+str(self.samples_per_batch)+' samples in one batch')
         if not os.path.exists(self.samplesheet):
@@ -90,63 +94,14 @@ class BatchController:
             for batch_index, batch in enumerate(self.batches):
                 out.write('\t'.join(self.batches[batch_index].keys())+'\n')
     
-    def __create_samplesheets(self):
-        '''For each batch, create a samplesheet that compute can use'''
-        for batch_number in range(0,len(self.batches),1):
-            outfile = self.root_dir+'/batch'+str(batch_number)+'/samplesheet_batch'+str(batch_number)+'.csv'
-            logging.info('Creating samplesheet at '+outfile)
-            with open(outfile,'w') as out:
-                out.write('internalId,project,sampleName,reads1FqGz,reads2FqGz\n')
-                for sample in self.batches[batch_number]:
-                    number_of_fastq_files = len(self.batches[batch_number][sample])
-                    if number_of_fastq_files == 1:
-                        out.write(sample+','+self.project+','+sample+','+self.batches[batch_number][sample][0]+',\n')
-                    elif number_of_fastq_files == 2 or number_of_fastq_files == 3:
-                        out.write(sample+','+self.project+','+sample+','+
-                                  self.batches[batch_number][sample][0]+','+self.batches[batch_number][sample][1]+'\n')
-                    else:
-                        logging.error('Number of files for '+sample+' is '+str(number_of_fastq_files)+' dont know what to do if it')
-                        RuntimeError('Wrong number of fastq files for '+samples)
-    
-    def __create_parameter_files(self):
-        '''For each batch, create parameter files'''
-        def convert_to_long_format(parameter_file):
-            transposed_parameter_text = ''
-            with open(parameter_file) as input_file:
-                header = []
-                values = []
-                for line in input_file:
-                    if line.startswith('#') or len(line.strip()) == 0:
-                        continue
-                    line = line.strip().split(',')
-                    header.append(line[0])
-                    values.append(line[1])
-                for index in range(0,len(header),1):
-                    transposed_parameter_text += header[index]+','
-                transposed_parameter_text += '\n'
-                for index in range(0,len(header),1):
-                    transposed_parameter_text += values[index]+','
-            return transposed_parameter_text
-        template = convert_to_long_format(self.script_dir+'../configurations/parameters_QC_template.csv')                    
-        for batch_number in range(0,len(self.batches),1):
-            outfile = self.root_dir+'/batch'+str(batch_number)+'/parameters_QC_batch'+str(batch_number)+'.csv'
-            logging.info('Creating QC pipeline parameter file at '+outfile)
-            new_template = template.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
-            with open(outfile,'w') as out:
-                out.write(new_template)
-    
-    def __create_molgenis_generate_jobs_script(self):
-        '''For each batch, create a molgenis generate script'''
-        for batch_number in range(0, len(self.batches),1):
-            outfile = self.root_dir+'/batch'+str(batch_number)+'/generate_QC_'+str(batch_number)+'.csv'
-    
     def setup_project(self):
         '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts'''
-        # rstrip and later add the / so that the path is not printed with // when logging
-        
+        # rstrip and later add the / so that the path is not printed with // when logging    
         self.__create_folder_structure()
+        compute = Compute(self.root_dir, self.batches, self.project)
+        compute.get_molgenis_pipelines()
         self.__create_samples_per_batch_file()
-        self.__create_parameter_files()
-        self.__create_molgenis_generate_jobs_script()
-    
-        self.__create_samplesheets()
+        compute.create_parameter_files(self.script_dir+'/../configurations/')
+        compute.create_QC_samplesheet()
+        compute.create_molgenis_generate_jobs_script(self.compute_version)
+        compute.generate_jobs()
