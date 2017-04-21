@@ -36,7 +36,8 @@ class BatchController:
             logging.error('Samplesheet '+samplesheet+' does not exist')
             raise RuntimeError('Samplesheet '+samplesheet+' does not exist')
         self.__create_batches()
-        
+        self.__create_folder_structure()
+
     def __create_batches(self):
         '''Create the batches by adding samples that are in the inclusion list (if None add all) and not in the exclusion list
            Exclusion list trumps inclusion list (sample in both inclusion and exclusion list will be excluded)'''
@@ -94,23 +95,29 @@ class BatchController:
             for batch_index, batch in enumerate(self.batches):
                 out.write('\t'.join(self.batches[batch_index].keys())+'\n')
     
-    def setup_project(self):
-        '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts'''
+    def setup_project(self, echo_output=True):
+        '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts
+
+        echo_output(bool):   Wether or not to echo compute output (mostly for testing purposes)
+        '''
         # rstrip and later add the / so that the path is not printed with // when logging    
-        self.__create_folder_structure()
         compute = Compute(self.root_dir, self.batches, self.project)
         compute.get_molgenis_pipelines()
         self.__create_samples_per_batch_file()
         compute.create_parameter_files(self.script_dir+'/../configurations/')
         compute.create_QC_samplesheet()
         compute.create_molgenis_generate_jobs_script(self.compute_version)
-        compute.generate_jobs()
+        compute.generate_jobs(echo_output)
     
-    def download_samples(self, batch_number):
+    def download_samples(self, batch_number, aspera_openssh='~/.aspera/connect/etc/asperaweb_id_dsa.openssh'):
         '''Download samples of certain batch
         
         batch_number(int):     Number of the batch to download samples for
+        aspera_binary(str)  Location of the Aspera binary (default: use from PATH)
+        aspera_openssh(str)  Location of the Aspera openssh (default: ~/.aspera/connect/etc/asperaweb_id_dsa.openssh)
         '''
-        logging.info('Downloading samples for batch '+str(batc_number))
-        download_samples = Download_ENA_samples.Download_ENA_samples(self.ena_samplesheet, self.root_dir+'/fastq_downloads/',
-                 inclusion_list = self.batches[batch_number])
+        logging.info('Downloading '+str(len(self.batches[batch_number]))+' samples for batch '+str(batch_number)+' to '+self.root_dir+'/fastq_downloads/')
+        download_samples = Download_ENA_samples(samplesheet = self.ena_samplesheet, 
+                                                download_location = self.root_dir+'/fastq_downloads/',
+                                                inclusion_list = self.batches[batch_number])
+        download_samples.start()
