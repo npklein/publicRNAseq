@@ -2,7 +2,7 @@ import logging
 import sys
 import os
 from .Utils import Utils
-from .Samplesheets import Samplesheets
+from .Compute import Compute
 import git
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
@@ -94,86 +94,14 @@ class BatchController:
             for batch_index, batch in enumerate(self.batches):
                 out.write('\t'.join(self.batches[batch_index].keys())+'\n')
     
-    def __create_parameter_files(self):
-        '''For each batch, create parameter files'''
-        def convert_to_long_format(parameter_file):
-            transposed_parameter_text = ''
-            with open(parameter_file) as input_file:
-                header = []
-                values = []
-                for line in input_file:
-                    if line.startswith('#') or len(line.strip()) == 0:
-                        continue
-                    line = line.strip().split(',')
-                    header.append(line[0])
-                    values.append(line[1])
-                for index in range(0,len(header),1):
-                    transposed_parameter_text += header[index]+','
-                transposed_parameter_text += '\n'
-                for index in range(0,len(header),1):
-                    transposed_parameter_text += values[index]+','
-            return transposed_parameter_text
-        template_QC = convert_to_long_format(self.script_dir+'../configurations/parameters_QC_template.csv') 
-        template_genotyping = convert_to_long_format(self.script_dir+'../configurations/parameters_genotyping_template.csv')                    
-        for batch_number in range(0,len(self.batches),1):
-            batch = 'batch'+str(batch_number)
-            parameters_QC_file = self.root_dir+'/'+batch+'/parameters_QC_batch'+str(batch_number)+'.csv'
-            outfile_genotyping = self.root_dir+'/'+batch+'/parameters_genotyping_batch'+str(batch_number)+'.csv'
-            logging.info('Creating QC pipeline parameter file at '+parameters_QC_file)
-            logging.info('Creating genotyping pipeline parameter file at '+outfile_genotyping)
-            new_template_QC = template_QC.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
-            new_template_genotyping = template_QC.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
-            with open(parameters_QC_file,'w') as out:
-                out.write(new_template_QC)
-            with open(outfile_genotyping,'w') as out:
-                out.write(new_template_genotyping)
-                    
-    def __create_molgenis_generate_jobs_script(self):
-        '''For each batch, create a molgenis generate script'''
-        for batch_number in range(0, len(self.batches),1):
-            batch = 'batch'+str(batch_number)
-            generate_QCjobs_file = self.root_dir+'/'+batch+'/generate_QCjobs_'+batch+'.sh'
-            with open(generate_QCjobs_file,'w') as out:
-                out.write('set -e\n')
-                out.write('module load Molgenis-Compute/'+self.compute_version+'\n')
-                out.write('sh $EBROOTMOLGENISMINCOMPUTE/molgenis_compute.sh \\\n')
-                out.write('  --backend slurm \\\n')
-                out.write('  --generate \\\n')
-                parameters_QC_file = self.root_dir+'/'+batch+'/parameters_QC_batch'+str(batch_number)+'.csv'
-                out.write('  -p '+parameters_QC_file+' \\\n')
-                molgenis_samplesheet = self.root_dir+'/'+batch+'/samplesheet_QC_batch'+str(batch_number)+'.csv'
-                out.write('  -p '+molgenis_samplesheet+' \\\n')
-                workflow_location = self.root_dir+'molgenis-pipelines/compute5/Public_RNA-seq_QC/workflows/workflow.csv'
-                out.write('  -w '+workflow_location+' \\\n')
-                out.write('  -rundir '+self.root_dir+'/'+batch+'/rundirs/QC/ --weave')
-
-    
-    def __get_molgenis_pipelines(self):
-        '''Download the molgenis pipelines from github'''
-        logging.info('Cloning molgenis-pipelines')
-        try:        
-            git.Repo.clone_from('https://github.com/molgenis/molgenis-pipelines.git', self.root_dir+'/molgenis-pipelines/')
-        except git.exc.GitCommandNotFound:
-            logging.error('Possible that git could not be located. Put in path or module load it before running code')
-            raise
-    
-    def __generate_jobs(self):
-        '''Use Compute to generate jobs'''
-        logging.info('Compute generating jobs')
-        for batch_number in range(0, len(self.batches),1):
-            batch = 'batch'+str(batch_number)
-            generate_QCjobs_file = self.root_dir+'/'+batch+'/generate_QCjobs_'+batch+'.sh'
-            logging.info('Execute "bash '+generate_QCjobs_file+'"')
-            os.system('bash '+generate_QCjobs_file)
-        
     def setup_project(self):
         '''Setup the project by making the correct folder structure, writing samplesheet/parameter files, and Molgenis Compute scripts'''
         # rstrip and later add the / so that the path is not printed with // when logging    
         self.__create_folder_structure()
-        self.__get_molgenis_pipelines()
+        compute = Compute(self.root_dir, self.batches, )
+        compute.get_molgenis_pipelines()
         self.__create_samples_per_batch_file()
-        self.__create_parameter_files()
-        print(self.batches)
-        Samplesheets.create_QC_samplesheet()
-        self.__create_molgenis_generate_jobs_script()
-        self.__generate_jobs()
+        compute.create_parameter_files(self.script_dir+'/../configurations/')
+        compute.create_QC_samplesheet()
+        compute.create_molgenis_generate_jobs_script(self.compute_version)
+        compute.generate_jobs()
