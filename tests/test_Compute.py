@@ -3,7 +3,7 @@ import os
 import unittest
 import shutil
 
-class SamplesheetsTest(unittest.TestCase):  
+class ComputeTest(unittest.TestCase):  
     def setUp(self):
         self.script_dir = os.path.dirname(os.path.abspath(__file__))+'/'
         # Samplesheets class is used to make and maintain compute samplesheets
@@ -11,12 +11,16 @@ class SamplesheetsTest(unittest.TestCase):
         self.project = 'test'
         shutil.rmtree(self.output_root_dir)
         os.mkdir(self.output_root_dir)
+        self.compute_version = 'v16.11.1-Java-1.8.0_74'
 
     def tearDown(self):
         pass
 
     def test_can_read_in_samplesheet_and_make_batches(self):  
         batches = [{'DRR000897': ['DRR000897.fastq.gz'], 'DRR001173': ['DRR001173.fastq.gz']}, {'DRR001622': ['DRR001622_1.fastq.gz', 'DRR001622_2.fastq.gz']}]
+        # have to make folder structure that is usually done in BatchController
+        for batch in range(0, len(batches),1):
+            os.makedirs(self.output_root_dir.rstrip('/')+'/batch'+str(batch), exist_ok=True)
         compute = genotypePublicData.Compute(batches=batches, root_dir=self.output_root_dir, project=self.project)
         
         # github clone the molgenis pipelines
@@ -58,21 +62,6 @@ class SamplesheetsTest(unittest.TestCase):
                 self.assertTrue('module load Molgenis-Compute' in generate_QC_jobs, 'No module load in the QC generate script')
                 self.assertTrue(batch in generate_QC_jobs, 'Wrong batch in generate QC jobs script')
 
-
-        self.assertTrue(os.path.exists(self.output_root_dir+'fastq_downloads'))
-        self.assertTrue(os.path.exists(self.output_root_dir+'samples_per_batch.tsv'))
-        with open(self.output_root_dir+'samples_per_batch.tsv') as input_file:
-            self.assertEqual(input_file.readline(),'batch0\tbatch1\n', 'Header samples_per_batch.tsv not correct')
-            line1 = input_file.readline()
-            samples_line1 = line1.strip().split('\t')
-            self.assertTrue('DRR000897' in samples_line1, 'DRR000897 not on line 1')
-            self.assertTrue('DRR001173' in samples_line1, 'DRR001173 not on line 2')
-            self.assertEqual(len(samples_line1), 2, 'Not 2 samples on line 1')
-            line2 = input_file.readline()
-            samples_line2 = line2.strip().split('\t')
-            self.assertTrue('DRR001622' in samples_line2, 'DRR001622 not on line 2')
-            self.assertEqual(len(samples_line2), 1, 'Not 1 sample on line 2')
-        
         
         
 

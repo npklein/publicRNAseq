@@ -2,6 +2,7 @@ import logging
 import sys
 import os
 from .Utils import Utils
+import git
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
@@ -14,9 +15,9 @@ class Compute:
         project (str)   project name
         batches (dir)   Samples per batch 
         '''
-        self.root_dir = self.root_dir
-        self.batches = self.batches
-        self.project = self.project
+        self.root_dir = root_dir
+        self.batches = batches
+        self.project = project
         
     def create_QC_samplesheet(self):
         '''For each batch, create a samplesheet that compute can use'''
@@ -25,7 +26,7 @@ class Compute:
             molgenis_samplesheet = self.root_dir+'/'+batch+'/samplesheet_QC_batch'+str(batch_number)+'.csv'
             logging.info('Creating samplesheet at '+molgenis_samplesheet)
             with open(molgenis_samplesheet,'w') as out:
-                out.write('internalId,self.project,sampleName,reads1FqGz,reads2FqGz\n')
+                out.write('internalId,project,sampleName,reads1FqGz,reads2FqGz\n')
                 for sample in self.batches[batch_number]:
                     number_of_fastq_files = len(self.batches[batch_number][sample])
                     if number_of_fastq_files == 1:
@@ -85,10 +86,10 @@ class Compute:
             return transposed_parameter_text
         parameter_QC_file = parameter_configuration_dir+'/parameters_QC_template.csv'
         parameter_genotype_file = parameter_configuration_dir+'/parameters_genotyping_template.csv'
-        if not os.path.exists(parameter_QC_file:
+        if not os.path.exists(parameter_QC_file):
             logging.error('Parameter QC file does not exist at '+parameter_QC_file)
             raise RuntimeError('Parameter QC file does not exist at '+parameter_QC_file)
-        if not os.path.exists(parameter_genotype_file:
+        if not os.path.exists(parameter_genotype_file):
             logging.error('Parameter genotype file does not exist at '+parameter_genotype_file)
             raise RuntimeError('Parameter genotype file does not exist at '+parameter_genotype_file)
 
@@ -100,8 +101,8 @@ class Compute:
             outfile_genotyping = self.root_dir+'/'+batch+'/parameters_genotyping_batch'+str(batch_number)+'.csv'
             logging.info('Creating QC pipeline parameter file at '+parameters_QC_file)
             logging.info('Creating genotyping pipeline parameter file at '+outfile_genotyping)
-            new_template_QC = template_QC.replace('self.project_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
-            new_template_genotyping = template_QC.replace('self.project_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
+            new_template_QC = template_QC.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
+            new_template_genotyping = template_QC.replace('PROJECT_DIR_DO_NOT_CHANGE_THIS', self.root_dir+'batch'+str(batch_number)+'/results/')
             with open(parameters_QC_file,'w') as out:
                 out.write(new_template_QC)
             with open(outfile_genotyping,'w') as out:
