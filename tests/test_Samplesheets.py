@@ -16,10 +16,7 @@ class SamplesheetsTest(unittest.TestCase):
         pass
 
     def test_can_read_in_samplesheet_and_make_batches(self):  
-        # some samples need to be included from the samplesheet
-        include_list = ['DRR000897','DRR001173','DRR001174','DRR001622']
-        # some samples need to be excluded
-        exclude_list = ['DRR001174']
+        batches = [{'DRR000897': ['DRR000897.fastq.gz'], 'DRR001173': ['DRR001173.fastq.gz']}, {'DRR001622': ['DRR001622_1.fastq.gz', 'DRR001622_2.fastq.gz']}]
         batch_controller = genotypePublicData.BatchController(self.ena_samplesheet, samples_per_batch=2, project=self.project, 
                                                               root_dir=self.output_root_dir,inclusion_list=include_list, exclusion_list=exclude_list)
         self.assertEqual(batch_controller.number_of_excluded_samples,7)
