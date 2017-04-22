@@ -1,5 +1,7 @@
 import logging
 import sys
+from contextlib import contextmanager
+import os
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
@@ -25,6 +27,8 @@ class Utils:
         prevdir = os.getcwd()
         os.chdir(os.path.expanduser(newdir))
         try:
+            logging.info('Change workdir from '+prevdir+' to '+newdir)
             yield
         finally:
+            logging.info('Change workdir from '+newdir+' to '+prevdir)
             os.chdir(prevdir)
