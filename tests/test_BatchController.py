@@ -22,13 +22,7 @@ class BatchControlTest(unittest.TestCase):
         self.batch_controller = genotypePublicData.BatchController(self.ena_samplesheet, samples_per_batch=2, project=self.project, 
                                                               root_dir=self.output_root_dir,inclusion_list=include_list, exclusion_list=exclude_list)
 
-<<<<<<< HEAD
-        # We want to set up the project first by creating the directory structure necesarry for putting jobs and results in
-        self.batch_controller.setup_project()
-    
-=======
 
->>>>>>> 6fd0bee40b9230e8e75783fc6550798444c37fea
     def tearDown(self):
         pass
 
