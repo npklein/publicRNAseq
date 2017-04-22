@@ -22,7 +22,6 @@ class BatchControlTest(unittest.TestCase):
         self.batch_controller = genotypePublicData.BatchController(self.ena_samplesheet, samples_per_batch=2, project=self.project, 
                                                               root_dir=self.output_root_dir,inclusion_list=include_list, exclusion_list=exclude_list)
 
-
     def tearDown(self):
         pass
 
