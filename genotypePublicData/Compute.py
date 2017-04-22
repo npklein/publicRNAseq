@@ -129,4 +129,4 @@ class Compute:
                 with open(os.devnull, 'wb') as devnull:
                     subprocess.check_call(['bash', generate_QCjobs_file], stdout=devnull, stderr=subprocess.STDOUT)
             else:
-                subprocess.check_call(['bash', generate_QCjobs_file])        
+                subprocess.check_call(['bash', generate_QCjobs_file])

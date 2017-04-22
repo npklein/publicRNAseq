@@ -4,6 +4,7 @@ import os
 from .Utils import Utils
 from .Compute import Compute
 from .Download_ENA_samples import Download_ENA_samples
+import subprocess
 
 format = '%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
@@ -78,9 +79,9 @@ class BatchController:
         '''Create the batch folder structure for putting jobs/samplesheets/parameter files etc in'''
         logging.info('Creating dirctory '+self.root_dir+'/fastq_downloads/')
         os.makedirs(self.root_dir+'/fastq_downloads/', exist_ok=True)
-        for batch in range(0, len(self.batches),1):
-            logging.info('Creating directory '+self.root_dir+'/batch'+str(batch))
-            os.makedirs(self.root_dir.rstrip('/')+'/batch'+str(batch), exist_ok=True)
+        for batch_number in range(0, len(self.batches),1):
+            logging.info('Creating directory '+self.root_dir+'/batch'+str(batch_number))
+            os.makedirs(self.root_dir.rstrip('/')+'/batch'+str(batch_number), exist_ok=True)
     
     def __create_samples_per_batch_file(self):
         '''In the root folder, create a file that contains for each batch which samples are included'''
@@ -121,3 +122,11 @@ class BatchController:
                                                 download_location = self.root_dir+'/fastq_downloads/',
                                                 inclusion_list = self.batches[batch_number])
         download_samples.start()
+
+    def submit_QC_batch(self, batch_number):
+        '''Submit one QC batch
+        
+        batch_number (int):     Number of the batch to submit
+        '''
+        with Utils.cd(self.root_dir+'/batch'+str(batch_number)+'rundirs/QC/'):
+            subprocess.check_call(['bash', generate_QCjobs_file])

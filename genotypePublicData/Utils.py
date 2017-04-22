@@ -18,3 +18,13 @@ class Utils:
             list_indexes[element] = i
             i += 1
         return list_indexes
+    
+    @staticmethod
+    @contextmanager
+    def cd(newdir):
+        prevdir = os.getcwd()
+        os.chdir(os.path.expanduser(newdir))
+        try:
+            yield
+        finally:
+            os.chdir(prevdir)
