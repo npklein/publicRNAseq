@@ -25,17 +25,14 @@ class Download_SamplesTest(unittest.TestCase):
         ena_samplesheet = self.script_dir+'test_data/ena_example_samplesheet.txt'
         download_ena_samples = genotypePublicData.Download_ENA_samples(ena_samplesheet, self.output_root_dir)
 
-        include_list = ['DRR000897','DRR001173','DRR001174','DRR001622']
-        exclude_list = ['DRR001174']
+        include_list = ['DRR000897','DRR001173']
+        exclude_list = ['DRR000897']
         download_ena_samples.set_inclusion_list(include_list)
         download_ena_samples.set_exclusion_list(exclude_list)
         # Using the link to the fastq file the files are automatically downloaded to the provided outfolder using aspera
         download_ena_samples.start(download_protocol=self.download_protocol)
-        self.assertTrue(os.path.exists(self.output_root_dir+'/DRR000897.fastq.gz'))
+        self.assertFalse(os.path.exists(self.output_root_dir+'/DRR000897.fastq.gz'))
         self.assertTrue(os.path.exists(self.output_root_dir+'/DRR001173.fastq.gz'))
-        self.assertFalse(os.path.exists(self.output_root_dir+'/DRR001174.fastq.gz'))
-        self.assertTrue(os.path.exists(self.output_root_dir+'/DRR001622_1.fastq.gz'))
-        self.assertTrue(os.path.exists(self.output_root_dir+'/DRR001622_2.fastq.gz'))
 
 if __name__ == '__main__':  
     unittest.main(warnings='ignore')  
