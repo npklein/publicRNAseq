@@ -23,6 +23,7 @@ class BatchControlTest(unittest.TestCase):
                                                               root_dir=self.output_root_dir,inclusion_list=include_list, exclusion_list=exclude_list)
         # setup project by generating samplesheets, parameter files etc
         self.batch_controller.setup_project(echo_output=False)
+
     def tearDown(self):
         pass
 
@@ -31,7 +32,6 @@ class BatchControlTest(unittest.TestCase):
         # We can get the created batches from batch_controller 
         batches = self.batch_controller.get_batches()
         # The batch controller should contain 2 batches, one with 2 samples and one with 1 sample
-        print(batches)
         self.assertEqual(len(batches), 1, 'Does not contain 1 batches')
         self.assertEqual(batches, [{'DRR000897': ['DRR000897.fastq.gz']}])
  
@@ -69,11 +69,10 @@ class BatchControlTest(unittest.TestCase):
             self.assertTrue('DRR000897' in samples_line1, 'DRR000897 not on line 1')
             self.assertEqual(len(samples_line1), 1, 'Not 1 samples on line 1')
         
-        
-    def test_can_download_samples(self):
+    def test_can_submit_jobs(self):
         '''Download the samples one batch at a time'''
-        self.batch_controller.download_samples(0)
-        self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR000897.fastq.gz'))
+        self.batch_controller.submit_QC_batch(0)
+        
 
     def test_can_submit_jobs(self):
         '''Download the samples one batch at a time'''
