@@ -25,7 +25,7 @@ class Download_SamplesheetTest(unittest.TestCase):
 #        download_ena_samplesheet.set_x11(True)
         # Dr. Gene Tica wants to get genotypes for all the latest RNAseq samples available on ENA (http://www.ebi.ac.uk/ena/)
         # To do this Gene needs to be able to download the FastQ files for all samples currently available
-        download_ena_samplesheet.download_samplesheet(self.output_root_dir)
+        download_ena_samplesheet.start(self.output_root_dir)
 
         # The location of the samplesheet needs to be retrievable
         ena_samplesheet = download_ena_samplesheet.get_samplesheet_file()
