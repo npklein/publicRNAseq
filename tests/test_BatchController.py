@@ -74,12 +74,6 @@ class BatchControlTest(unittest.TestCase):
         self.batch_controller.submit_QC_batch(0)
         
 
-    def test_can_submit_jobs(self):
-        '''Download the samples one batch at a time'''
-        self.batch_controller.submit_QC_batch(0)
-        
-
-
 if __name__ == '__main__':  
     unittest.main(warnings='ignore')  
 
