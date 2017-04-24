@@ -10,14 +10,17 @@ import os
 import shutil
 
 class Download_ENA_samplesheet:
-    def __init__(self,tax_id='9606', library_strategy='RNA-seq'):
+    def __init__(self,tax_id='9606', library_strategy='RNA-seq', 
+                             first_public=time.strftime("%Y-%m-%d")):
         '''Initiate download_ENA_samplesheet class by setting tax_id and library_strategy
 
         tax_id(str)    Organism to download samplesheet for (def: 9606 <homo sapiens>)
         library_strategy(str)    type of data to download (def: RNA-seq)
+        first_public(str)    Date records first public, format as yyyy-mm-dd (def: date program is run)
         '''
         self.tax_id = tax_id
         self.library_strategy = library_strategy
+        self.first_public = first_public
         self.samplesheet_file = None
         self.x11 = False
         
@@ -114,7 +117,7 @@ class Download_ENA_samplesheet:
             if not checkbox.is_selected():
                 checkbox.click()
     
-    def download_samplesheet(self, output_directory, tax_id='9606',library_strategy='RNA-Seq'):
+    def download_samplesheet(self, output_directory):
         '''Download samplesheet from ENA
         
            output_file(str)    output file name for samplesheet
@@ -132,7 +135,10 @@ class Download_ENA_samplesheet:
             logging.info('Using X11')
         self.driver = webdriver.Firefox(self.__prevent_download_dialog(output_directory))
         logging.info('Downloading samplesheet for tax_id: '+self.tax_id+' and library strategy: '+self.library_strategy)
-        url = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28'+tax_id+'%29%20AND%20library_strategy=%22'+library_strategy+'%22%22&domain=read'
+        url = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28'+self.tax_id+ \
+                                  '%29%20AND%20library_strategy=%22'+self.library_strategy+'%22' \
+                                  '%20AND%20first_public<='+self.first_public+ \
+                                  '%22&domain=read'
         logging.info('Using url: '+url)
         try:
             self.driver.get(url)            

@@ -21,13 +21,14 @@ class BatchControlTest(unittest.TestCase):
         # folder structure is created when initializing
         self.batch_controller = genotypePublicData.BatchController(self.ena_samplesheet, samples_per_batch=2, project=self.project, 
                                                               root_dir=self.output_root_dir,inclusion_list=include_list, exclusion_list=exclude_list)
-
+        # setup project by generating samplesheets, parameter files etc
+        self.batch_controller.setup_project(echo_output=False)
+        self.batch_controller.download_samples(0)
     def tearDown(self):
         pass
 
     def test_can_read_in_samplesheet_and_make_batches(self):  
-        # setup project by generating samplesheets, parameter files etc
-        self.batch_controller.setup_project(echo_output=False)
+        
         self.assertEqual(self.batch_controller.number_of_excluded_samples,7)
         # We can get the created batches from batch_controller 
         batches = self.batch_controller.get_batches()
@@ -79,7 +80,6 @@ class BatchControlTest(unittest.TestCase):
         
     def test_can_download_samples(self):
         '''Download the samples one batch at a time'''
-        self.batch_controller.download_samples(0)
         self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR000897.fastq.gz'))
         self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001173.fastq.gz'))
         # check the second batch is not downloaded yet
@@ -90,6 +90,11 @@ class BatchControlTest(unittest.TestCase):
         self.batch_controller.download_samples(1)
         self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_1.fastq.gz'))
         self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_2.fastq.gz'))
+
+    def test_can_submit_jobs(self):
+        '''Download the samples one batch at a time'''
+        self.batch_controller.submit_QC_batch(0)
+        
 
 
 if __name__ == '__main__':  

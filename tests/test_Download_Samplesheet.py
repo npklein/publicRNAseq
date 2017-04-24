@@ -20,7 +20,7 @@ class Download_SamplesheetTest(unittest.TestCase):
         tax = '9606'
         # Get the RNA-seq samples
         library_strategy = 'RNA-seq'
-        download_ena_samplesheet = genotypePublicData.Download_ENA_samplesheet(tax, library_strategy)
+        download_ena_samplesheet = genotypePublicData.Download_ENA_samplesheet(tax, library_strategy, '2010-02-26')
 #        download_ena_samplesheet.set_x11(True)
         # Dr. Gene Tica wants to get genotypes for all the latest RNAseq samples available on ENA (http://www.ebi.ac.uk/ena/)
         # To do this Gene needs to be able to download the FastQ files for all samples currently available
@@ -32,7 +32,7 @@ class Download_SamplesheetTest(unittest.TestCase):
         self.assertTrue(bool(re.match(pattern,ena_samplesheet)), 'samplesheet name not following correct format')
         with open(ena_samplesheet) as input_file:
             header_columns = input_file.readline().split('\t')
-            self.assertEqual(len(header_columns), 48, 'Not enough or too many header columns in samplesheet')
+            self.assertEqual(len(header_columns), 49, 'Not enough or too many header columns in samplesheet')
              
         self.assertTrue(os.path.exists(ena_samplesheet))
 
