@@ -128,5 +128,5 @@ class BatchController:
         
         batch_number (int):     Number of the batch to submit
         '''
-        with Utils.cd(self.root_dir+'/batch'+str(batch_number)+'/rundirs/QC/'):
+        with Utils.cd(self.root_dir+'/batch'+str(batch_number)+'rundirs/QC/'):
             subprocess.check_call(['bash', 'submit.sh'])
