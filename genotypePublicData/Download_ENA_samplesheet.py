@@ -117,7 +117,7 @@ class Download_ENA_samplesheet:
             if not checkbox.is_selected():
                 checkbox.click()
     
-    def download_samplesheet(self, output_directory):
+    def start(self, output_directory):
         '''Download samplesheet from ENA
         
            output_file(str)    output file name for samplesheet
@@ -189,7 +189,7 @@ class Download_ENA_samplesheet:
             return self.samplesheet_file
         else:
             logging.error('Can not get samplesheet location without downloading samplesheet first.')
-            raise RuntimeError('Need to run download_samplesheet first')
+            raise RuntimeError('Need to run start first')
         
     def quit_browser(self):
         self.driver.quit()
