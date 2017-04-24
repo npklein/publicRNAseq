@@ -14,14 +14,13 @@ class UtilsTest(unittest.TestCase):
         pass
 
     def test_can_change_directories(self):
-        current_path = os.path.normpath(os.getcwd())
-        self.assertTrue(current_path == self.script_dir)
+        current_path_old = os.path.normpath(os.getcwd())
         # test after with statement the working directory is changed back again
         with genotypePublicData.Utils.cd(self.output_root_dir):
             current_path = os.path.normpath(os.getcwd())
             self.assertTrue(current_path == self.output_root_dir)
         current_path = os.path.normpath(os.getcwd())
-        self.assertTrue(current_path == self.script_dir)
+        self.assertTrue(current_path == current_path_old)
 
     def test_get_all_indices(self):
         example_list = ['a','b','c']

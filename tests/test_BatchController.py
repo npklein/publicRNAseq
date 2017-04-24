@@ -15,7 +15,7 @@ class BatchControlTest(unittest.TestCase):
         shutil.rmtree(self.output_root_dir)
         os.mkdir(self.output_root_dir)
         # some samples need to be included from the samplesheet
-        include_list = ['DRR000897','DRR001173','DRR001174','DRR001622']
+        include_list = ['DRR000897','DRR001174']
         # some samples need to be excluded
         exclude_list = ['DRR001174']
         # folder structure is created when initializing
@@ -23,20 +23,26 @@ class BatchControlTest(unittest.TestCase):
                                                               root_dir=self.output_root_dir,inclusion_list=include_list, exclusion_list=exclude_list)
         # setup project by generating samplesheets, parameter files etc
         self.batch_controller.setup_project(echo_output=False)
+<<<<<<< HEAD
         self.batch_controller.download_samples(0)
+=======
+>>>>>>> 147d2ac9ab5ac790a206a79537be432df03ffbc2
     def tearDown(self):
         pass
 
     def test_can_read_in_samplesheet_and_make_batches(self):  
+<<<<<<< HEAD
         
         self.assertEqual(self.batch_controller.number_of_excluded_samples,7)
+=======
+        self.assertEqual(self.batch_controller.number_of_excluded_samples,9)
+>>>>>>> 147d2ac9ab5ac790a206a79537be432df03ffbc2
         # We can get the created batches from batch_controller 
         batches = self.batch_controller.get_batches()
         # The batch controller should contain 2 batches, one with 2 samples and one with 1 sample
-        self.assertEqual(len(batches), 2, 'Does not contain 2 batches')
-        self.assertEqual(batches, [{'DRR000897':['DRR000897.fastq.gz'],
-                                   'DRR001173':['DRR001173.fastq.gz']},
-                                   {'DRR001622':['DRR001622_1.fastq.gz','DRR001622_2.fastq.gz']}], 'Batch list not the same')
+        print(batches)
+        self.assertEqual(len(batches), 1, 'Does not contain 1 batches')
+        self.assertEqual(batches, [{'DRR000897': ['DRR000897.fastq.gz']}])
  
         self.assertTrue(os.path.exists(self.output_root_dir+'molgenis-pipelines/'))
         for batch_number in range(0, len(batches),1):
@@ -66,30 +72,21 @@ class BatchControlTest(unittest.TestCase):
         self.assertTrue(os.path.exists(self.output_root_dir+'fastq_downloads'))
         self.assertTrue(os.path.exists(self.output_root_dir+'samples_per_batch.tsv'))
         with open(self.output_root_dir+'samples_per_batch.tsv') as input_file:
-            self.assertEqual(input_file.readline(),'batch0\tbatch1\n', 'Header samples_per_batch.tsv not correct')
+            self.assertEqual(input_file.readline(),'batch0\n', 'Header samples_per_batch.tsv not correct')
             line1 = input_file.readline()
             samples_line1 = line1.strip().split('\t')
             self.assertTrue('DRR000897' in samples_line1, 'DRR000897 not on line 1')
-            self.assertTrue('DRR001173' in samples_line1, 'DRR001173 not on line 2')
-            self.assertEqual(len(samples_line1), 2, 'Not 2 samples on line 1')
-            line2 = input_file.readline()
-            samples_line2 = line2.strip().split('\t')
-            self.assertTrue('DRR001622' in samples_line2, 'DRR001622 not on line 2')
-            self.assertEqual(len(samples_line2), 1, 'Not 1 sample on line 2')
+            self.assertEqual(len(samples_line1), 1, 'Not 1 samples on line 1')
         
         
     def test_can_download_samples(self):
         '''Download the samples one batch at a time'''
         self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR000897.fastq.gz'))
-        self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001173.fastq.gz'))
-        # check the second batch is not downloaded yet
-        self.assertFalse(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_1.fastq.gz'))
-        self.assertFalse(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_2.fastq.gz'))
+
+    def test_can_submit_jobs(self):
+        '''Download the samples one batch at a time'''
+        self.batch_controller.submit_QC_batch(0)
         
-        # now check if it does get downloaded with second batch
-        self.batch_controller.download_samples(1)
-        self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_1.fastq.gz'))
-        self.assertTrue(os.path.exists(self.output_root_dir+'/fastq_downloads/DRR001622_2.fastq.gz'))
 
     def test_can_submit_jobs(self):
         '''Download the samples one batch at a time'''
