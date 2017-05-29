@@ -133,13 +133,15 @@ class Download_ENA_samplesheet:
             display.start()
         else:
             logging.info('Using X11')
-        self.driver = webdriver.Firefox(self.__prevent_download_dialog(output_directory))
-        logging.info('Downloading samplesheet for tax_id: '+self.tax_id+' and library strategy: '+self.library_strategy)
         url = 'http://www.ebi.ac.uk/ena/data/warehouse/search?query=%22tax_eq%28'+self.tax_id+ \
                                   '%29%20AND%20library_strategy=%22'+self.library_strategy+'%22'+ \
                                   '%20AND%20first_public<='+self.first_public+ \
                                   '%22&domain=read'
         logging.info('Using url: '+url)
+        logging.info('Downloading samplesheet for tax_id: '+self.tax_id \
+                    +', library strategy: '+self.library_strategy \
+                    +' and first_public <= '+self.first_public)
+        self.driver = webdriver.Firefox(self.__prevent_download_dialog(output_directory))
         try:
             self.driver.get(url)            
             # can take a bit of time for the javascript to load, wait until it's fully loaded
