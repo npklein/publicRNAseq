@@ -14,10 +14,10 @@ To run all unittests, do
 # BELOW IS OUT OF DATE
 To download the current RNA-seq samplesheet to your /tmp directory
 
-    import genotypePublicData
-    # Get the Homo Sapien samples (tax 9606). Change for samples of different organism
-    tax = '9606'
-    # Get the RNA-seq samples
-    library_strategy = 'RNA-seq'
-    download_ena_samples = genotypePublicData.Download_ENA_samplesheet(tax, library_strategy)
-    download_ena_samples.download_samplesheet('/tmp')
+    import genotypePublicData  
+    # Get the Homo Sapien samples (tax 9606). Change for samples of different organism  
+    tax = '9606'  
+    # Get the RNA-seq samples  
+    library_strategy = 'RNA-seq'  
+    download_ena_samples = genotypePublicData.Download_ENA_samplesheet(tax, library_strategy)  
+    download_ena_samples.download_samplesheet('/tmp')  
